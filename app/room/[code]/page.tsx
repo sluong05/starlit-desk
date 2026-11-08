@@ -10,6 +10,7 @@ import VideoStage from "@/components/VideoStage";
 import Pomodoro from "@/components/Pomodoro";
 import AmbiencePanel from "@/components/AmbiencePanel";
 import Chat from "@/components/Chat";
+import ScreenShareButton from "@/components/ScreenShareButton";
 import { getTheme, savedTheme, type ThemeId } from "@/lib/themes";
 import { useApplyTheme } from "@/lib/useTheme";
 import { useSyncedState } from "@/lib/useSyncedState";
@@ -175,6 +176,7 @@ function Room() {
           <TrackToggle source={Track.Source.Camera} className="btn btn-ghost">
             Camera
           </TrackToggle>
+          <ScreenShareButton onError={flash} />
           <DisconnectButton className="btn btn-leave">Leave</DisconnectButton>
         </footer>
       </main>

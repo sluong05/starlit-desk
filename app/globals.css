@@ -425,8 +425,114 @@ button {
   display: block;
 }
 
-.tile-local video {
+/* mirror only your own camera, never a shared screen */
+.tile-local.tile-camera video {
   transform: scaleX(-1);
+}
+
+.tile[role="button"] {
+  cursor: pointer;
+  transition: box-shadow 0.2s ease, transform 0.15s ease;
+}
+
+.tile[role="button"]:hover {
+  transform: translateY(-2px);
+}
+
+.tile[role="button"]:focus-visible {
+  outline: 3px solid var(--lamp);
+  outline-offset: 3px;
+}
+
+.tile-hint {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: rgba(7, 11, 31, 0.6);
+  color: #fff;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.tile:hover .tile-hint,
+.tile:focus-visible .tile-hint {
+  opacity: 1;
+}
+
+/* shared screens: show the whole thing, letterboxed */
+.tile-screen {
+  aspect-ratio: 16 / 9;
+  background: #05070f;
+}
+
+.tile-screen video {
+  object-fit: contain;
+}
+
+/* one tile enlarged, the rest in a strip */
+.stage-focus {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 190px;
+  gap: 0.85rem;
+  align-items: start;
+  align-content: start;
+}
+
+.stage-focus .tile-big {
+  aspect-ratio: 16 / 9;
+  max-height: calc(100vh - 210px);
+  width: 100%;
+  justify-self: center;
+}
+
+.stage-focus .tile-big.tile-camera {
+  aspect-ratio: 4 / 3;
+}
+
+.stage-strip {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.tile-small {
+  border-radius: 16px;
+  border-width: 1.5px;
+}
+
+.tile-small .tile-name {
+  left: 8px;
+  bottom: 8px;
+  font-size: 0.72rem;
+  padding: 0.2rem 0.55rem;
+}
+
+.tile-small .mute-badge {
+  top: 8px;
+  right: 8px;
+  padding: 0.25rem;
+}
+
+.tile-small .cam-off {
+  font-size: 1.8rem;
+}
+
+@media (max-width: 700px) {
+  .stage-focus {
+    grid-template-columns: 1fr;
+  }
+  .stage-strip {
+    flex-direction: row;
+    overflow-x: auto;
+  }
+  .stage-strip .tile {
+    flex: 0 0 140px;
+  }
 }
 
 .tile-name {
