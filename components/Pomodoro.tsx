@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useDataChannel } from "@livekit/components-react";
+import { useTopic } from "@/lib/useTopic";
 import { chime } from "@/lib/sound/engine";
 
 /**
@@ -44,9 +44,6 @@ const initial: TimerState = {
   rev: 0,
 };
 
-const encoder = new TextEncoder();
-const decoder = new TextDecoder();
-
 function msLeft(s: TimerState, now: number) {
   return s.endsAt ? Math.max(0, s.endsAt - now) : s.remainingMs;
 }
@@ -66,13 +63,8 @@ export default function Pomodoro({ onPhase }: { onPhase?: (p: Phase) => void }) 
   const stateRef = useRef(state);
   stateRef.current = state;
 
-  const { send } = useDataChannel("timer", (msg) => {
-    let parsed: Message;
-    try {
-      parsed = JSON.parse(decoder.decode(msg.payload));
-    } catch {
-      return;
-    }
+  const post = useTopic("timer", (data) => {
+    const parsed = data as Message;
     if (parsed.type === "hello") {
       // Someone new arrived; tell them where we are.
       broadcast(stateRef.current);
@@ -81,15 +73,7 @@ export default function Pomodoro({ onPhase }: { onPhase?: (p: Phase) => void }) 
     }
   });
 
-  const broadcast = useCallback(
-    (s: TimerState) => {
-      const msg: Message = { type: "state", state: s };
-      send(encoder.encode(JSON.stringify(msg)), { reliable: true, topic: "timer" }).catch(() => {
-        /* not connected yet; the next change will sync */
-      });
-    },
-    [send],
-  );
+  const broadcast = useCallback((s: TimerState) => post({ type: "state", state: s } satisfies Message), [post]);
 
   const update = useCallback(
     (fn: (s: TimerState) => TimerState) => {
@@ -102,12 +86,9 @@ export default function Pomodoro({ onPhase }: { onPhase?: (p: Phase) => void }) 
 
   // Ask for the current state shortly after joining.
   useEffect(() => {
-    const t = setTimeout(() => {
-      const hello: Message = { type: "hello" };
-      send(encoder.encode(JSON.stringify(hello)), { reliable: true, topic: "timer" }).catch(() => {});
-    }, 800);
+    const t = setTimeout(() => post({ type: "hello" } satisfies Message), 800);
     return () => clearTimeout(t);
-  }, [send]);
+  }, [post]);
 
   // Tick, and flip focus <-> break when time runs out. Every client computes
   // the same flip from the same shared state, so no message is needed here.
