@@ -2,18 +2,11 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { Track } from "livekit-client";
-import { DisconnectButton, LiveKitRoom, RoomAudioRenderer, TrackToggle } from "@livekit/components-react";
+import { LiveKitRoom, RoomAudioRenderer } from "@livekit/components-react";
 import Scene from "@/components/Scene";
-import ThemePicker from "@/components/ThemePicker";
-import VideoStage from "@/components/VideoStage";
-import Pomodoro from "@/components/Pomodoro";
-import AmbiencePanel from "@/components/AmbiencePanel";
-import Chat from "@/components/Chat";
-import ScreenShareButton from "@/components/ScreenShareButton";
-import { getTheme, savedTheme, type ThemeId } from "@/lib/themes";
+import { savedTheme, type ThemeId } from "@/lib/themes";
 import { useApplyTheme } from "@/lib/useTheme";
-import { useSyncedState } from "@/lib/useSyncedState";
+import RoomInside from "@/components/RoomInside";
 
 export default function RoomPage() {
   return (
@@ -147,54 +140,18 @@ function Room() {
       style={{ background: "transparent" }}
     >
       {scene}
-      <main className="room">
-        <header className="room-top">
-          <h1 className="room-title">
-            Starlit Desk<span>#{code}</span>
-          </h1>
-          <div className="room-actions">
-            <SharedTheme initial={initialTheme} onTheme={setTheme} />
-            <button className="btn btn-lamp" onClick={copyInvite}>
-              Invite ✦
-            </button>
-          </div>
-        </header>
-
-        <div className="room-main">
-          <VideoStage inviteUrl={inviteUrl} />
-          <aside className="side">
-            <Pomodoro />
-            <Chat />
-            <AmbiencePanel theme={getTheme(theme)} />
-          </aside>
-        </div>
-
-        <footer className="glass controls">
-          <TrackToggle source={Track.Source.Microphone} className="btn btn-ghost">
-            Mic
-          </TrackToggle>
-          <TrackToggle source={Track.Source.Camera} className="btn btn-ghost">
-            Camera
-          </TrackToggle>
-          <ScreenShareButton onError={flash} />
-          <DisconnectButton className="btn btn-leave">Leave</DisconnectButton>
-        </footer>
-      </main>
+      <RoomInside
+        code={code}
+        inviteUrl={inviteUrl}
+        theme={theme}
+        initialTheme={initialTheme}
+        setTheme={setTheme}
+        copyInvite={copyInvite}
+        flash={flash}
+      />
       <RoomAudioRenderer />
       {toast && <div className="toast" role="status">{toast}</div>}
     </LiveKitRoom>
-  );
-}
-
-/** The room's theme, shared with everyone in it. */
-function SharedTheme({ initial, onTheme }: { initial: ThemeId; onTheme: (t: ThemeId) => void }) {
-  const [theme, setTheme] = useSyncedState<ThemeId>("theme", initial);
-  useEffect(() => onTheme(theme), [theme, onTheme]);
-  return (
-    <>
-      <span className="theme-name">{getTheme(theme).name}</span>
-      <ThemePicker value={theme} onChange={setTheme} />
-    </>
   );
 }
 

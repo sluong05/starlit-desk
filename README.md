@@ -7,7 +7,8 @@ Study side by side with a friend over video, in a cozy room under the stars.
 - **Shared Pomodoro timer** (25/5, 50/10, 90/15) that stays in sync for both of you
 - **Five room themes** you pick together (synced for both people): Starlit Night, Rainy Café, Forest Cabin, Sakura Morning, Seaside Dusk
 - **Ambience mixer**: rain, fireplace, crickets, waves, wind, birds — synthesized in the browser (no audio files), plus a one-tap mix for each theme
-- **Text chat** and **mute indicators**
+- **Text chat**, **mute indicators**, **screen sharing**, and **click-to-enlarge** video
+- **12 break games**, co-op or race: Moonword, Constellations, Deep Sky, Hive, Star Ladder, Scramble, Emoji Cinema, Timeline, Alphabet Sprint, Jinx, Star Math, Mini Sudoku. In **Study** mode they unlock only during Pomodoro breaks; **Game Night** mode unlocks them anytime.
 
 Built with Next.js 16 (App Router), React 19, and TypeScript.
 
@@ -67,6 +68,8 @@ lib/
 **Timer sync.** The timer's full state is broadcast on the `timer` data topic whenever someone presses a button, and the last write wins. A running timer is stored as an absolute `endsAt` timestamp, so both browsers count down on their own without chatting every second. When someone joins, they send `hello` and whoever is already there replies with the current state. Both computers' clocks need to be roughly right; normal OS time sync is plenty.
 
 **Rooms.** A room code like `cozy-owl-482` is the only key, so anyone with the link can join. That's fine for friends. Add auth before making it public.
+
+**Games.** Each game in `lib/games/` is a pure state machine: `puzzle(seed)` builds the puzzle (both players generate the same one locally from a shared seed), and `reduce(state, action)` applies a move. Every move is broadcast on the `game-act` data topic into a shared, time-ordered log (`lib/games/useGameLog.ts`) that each browser replays, so both screens always agree without a server. In co-op, everyone's moves build one shared state; in race, each player's moves build their own. To add a game, write a `GameDef` and add it to `lib/games/index.ts`. Word lists come from SCOWL (see `lib/games/data/WORDLIST-COPYRIGHT.txt`) and are rebuilt with `node scripts/build-word-data.mjs`.
 
 **Themes.** The palette for each theme is a block of CSS variables in `app/globals.css` (`[data-theme="…"]`); the moving scene is a function in `lib/scenes.ts`. To add a theme, add an entry to `lib/themes.ts`, a palette block, and a scene.
 

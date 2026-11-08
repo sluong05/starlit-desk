@@ -19,7 +19,7 @@ const isScreen = (t: TrackReferenceOrPlaceholder) => t.source === Track.Source.S
  * Click any tile to make it big (the others shrink into a strip); click it
  * again to go back. A new screen share is enlarged automatically.
  */
-export default function VideoStage({ inviteUrl }: { inviteUrl: string }) {
+export default function VideoStage({ inviteUrl, main }: { inviteUrl: string; main?: React.ReactNode }) {
   const tracks = useTracks(
     [
       { source: Track.Source.Camera, withPlaceholder: true },
@@ -74,6 +74,20 @@ export default function VideoStage({ inviteUrl }: { inviteUrl: string }) {
     </div>
   );
 
+  // Game mode: the game takes the big spot and everyone's video sits in the strip.
+  if (main) {
+    return (
+      <div className="stage stage-focus stage-game">
+        {main}
+        <div className="stage-strip">
+          {shown.map((t) => (
+            <Tile key={keyOf(t)} trackRef={t} small />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   if (focused) {
     const others = shown.filter((t) => t !== focused);
     return (
@@ -112,7 +126,7 @@ function Tile({
   trackRef: TrackReferenceOrPlaceholder;
   big?: boolean;
   small?: boolean;
-  onClick: () => void;
+  onClick?: () => void;
 }) {
   const { participant } = trackRef;
   const screen = isScreen(trackRef);
@@ -135,17 +149,21 @@ function Tile({
   return (
     <div
       className={cls}
-      role="button"
-      tabIndex={0}
-      aria-label={big ? `Shrink ${label}` : `Enlarge ${label}`}
-      title={big ? "Click to go back" : "Click to enlarge"}
-      onClick={onClick}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          onClick();
-        }
-      }}
+      {...(onClick
+        ? {
+            role: "button",
+            tabIndex: 0,
+            "aria-label": big ? `Shrink ${label}` : `Enlarge ${label}`,
+            title: big ? "Click to go back" : "Click to enlarge",
+            onClick,
+            onKeyDown: (e: React.KeyboardEvent) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onClick();
+              }
+            },
+          }
+        : {})}
     >
       {hasVideo ? <VideoTrack trackRef={trackRef} /> : <div className="cam-off">{name.slice(0, 1).toUpperCase()}</div>}
       {!screen && micMuted && (
@@ -154,9 +172,11 @@ function Tile({
           {!small && <span>Muted</span>}
         </div>
       )}
+      {onClick && (
       <span className="tile-hint" aria-hidden="true">
         {big ? <ShrinkIcon /> : <ExpandIcon />}
       </span>
+      )}
       <div className="tile-name">
         {screen && <ScreenIcon />}
         {!screen && speaking && !micMuted && <span className="speaking-dot" aria-label="speaking" />}

@@ -58,7 +58,9 @@ function fmt(ms: number) {
   return `${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
 }
 
-export default function Pomodoro() {
+export type Phase = { mode: Mode; endsAt: number | null; remainingMs: number };
+
+export default function Pomodoro({ onPhase }: { onPhase?: (p: Phase) => void }) {
   const [state, setState] = useState<TimerState>(initial);
   const [now, setNow] = useState(() => Date.now());
   const stateRef = useRef(state);
@@ -130,6 +132,11 @@ export default function Pomodoro() {
     }, 250);
     return () => clearInterval(id);
   }, []);
+
+  // Let the room know whether it's focus or break time (games unlock on breaks).
+  useEffect(() => {
+    onPhase?.({ mode: state.mode, endsAt: state.endsAt, remainingMs: state.remainingMs });
+  }, [state.mode, state.endsAt, state.remainingMs, onPhase]);
 
   const left = msLeft(state, now);
   const total = (state.mode === "focus" ? state.focusMin : state.breakMin) * 60_000;
