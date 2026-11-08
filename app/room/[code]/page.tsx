@@ -4,20 +4,21 @@ import { Suspense, useEffect, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { Track } from "livekit-client";
 import { DisconnectButton, LiveKitRoom, RoomAudioRenderer, TrackToggle } from "@livekit/components-react";
-import Starfield from "@/components/Starfield";
+import Scene from "@/components/Scene";
+import ThemePicker from "@/components/ThemePicker";
 import VideoStage from "@/components/VideoStage";
 import Pomodoro from "@/components/Pomodoro";
 import AmbiencePanel from "@/components/AmbiencePanel";
 import Chat from "@/components/Chat";
+import { getTheme, savedTheme, type ThemeId } from "@/lib/themes";
+import { useApplyTheme } from "@/lib/useTheme";
+import { useSyncedState } from "@/lib/useSyncedState";
 
 export default function RoomPage() {
   return (
-    <>
-      <Starfield />
-      <Suspense fallback={<Status title="Lighting the lamp…" />}>
-        <Room />
-      </Suspense>
-    </>
+    <Suspense fallback={<Status title="Lighting the lamp…" />}>
+      <Room />
+    </Suspense>
   );
 }
 
@@ -31,6 +32,16 @@ function Room() {
   const [token, setToken] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [toast, setToast] = useState("");
+  // What's on screen. Starts from this browser's last theme; once connected,
+  // the room's shared theme takes over.
+  const [theme, setTheme] = useState<ThemeId>("starlit");
+  const [initialTheme, setInitialTheme] = useState<ThemeId | null>(null);
+  useEffect(() => {
+    const t = savedTheme();
+    setTheme(t);
+    setInitialTheme(t);
+  }, []);
+  useApplyTheme(theme);
 
   const serverUrl = process.env.NEXT_PUBLIC_LIVEKIT_URL;
   const inviteUrl = typeof window !== "undefined" ? `${window.location.origin}/room/${code}` : "";
@@ -75,12 +86,16 @@ function Room() {
     }
   };
 
+  const scene = <Scene theme={theme} />;
+
   if (!serverUrl) {
-    return <Status title="Almost there" body="Set NEXT_PUBLIC_LIVEKIT_URL in .env.local (see README), then restart the dev server." />;
+    return <Status scene={scene} title="Almost there" body="Set NEXT_PUBLIC_LIVEKIT_URL in .env.local (see README), then restart the dev server." />;
   }
 
   if (!nameFromUrl) {
     return (
+      <>
+      {scene}
       <main className="status-screen">
         <form
           className="glass"
@@ -111,11 +126,12 @@ function Room() {
           </button>
         </form>
       </main>
+      </>
     );
   }
 
-  if (error) return <Status title="Hmm, the door is stuck" body={error} />;
-  if (!token) return <Status title="Lighting the lamp…" />;
+  if (error) return <Status scene={scene} title="Hmm, the door is stuck" body={error} />;
+  if (!token || !initialTheme) return <Status scene={scene} title="Lighting the lamp…" />;
 
   return (
     <LiveKitRoom
@@ -129,14 +145,18 @@ function Room() {
       data-lk-theme="default"
       style={{ background: "transparent" }}
     >
+      {scene}
       <main className="room">
         <header className="room-top">
           <h1 className="room-title">
             Starlit Desk<span>#{code}</span>
           </h1>
-          <button className="btn btn-lamp" onClick={copyInvite}>
-            Invite ✦
-          </button>
+          <div className="room-actions">
+            <SharedTheme initial={initialTheme} onTheme={setTheme} />
+            <button className="btn btn-lamp" onClick={copyInvite}>
+              Invite ✦
+            </button>
+          </div>
         </header>
 
         <div className="room-main">
@@ -144,7 +164,7 @@ function Room() {
           <aside className="side">
             <Pomodoro />
             <Chat />
-            <AmbiencePanel />
+            <AmbiencePanel theme={getTheme(theme)} />
           </aside>
         </div>
 
@@ -164,8 +184,22 @@ function Room() {
   );
 }
 
-function Status({ title, body }: { title: string; body?: string }) {
+/** The room's theme, shared with everyone in it. */
+function SharedTheme({ initial, onTheme }: { initial: ThemeId; onTheme: (t: ThemeId) => void }) {
+  const [theme, setTheme] = useSyncedState<ThemeId>("theme", initial);
+  useEffect(() => onTheme(theme), [theme, onTheme]);
   return (
+    <>
+      <span className="theme-name">{getTheme(theme).name}</span>
+      <ThemePicker value={theme} onChange={setTheme} />
+    </>
+  );
+}
+
+function Status({ title, body, scene }: { title: string; body?: string; scene?: React.ReactNode }) {
+  return (
+    <>
+    {scene}
     <main className="status-screen">
       <div className="glass">
         <h1 className="room-title">{title}</h1>
@@ -177,5 +211,6 @@ function Status({ title, body }: { title: string; body?: string }) {
         )}
       </div>
     </main>
+    </>
   );
 }

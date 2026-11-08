@@ -2,7 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import Starfield from "@/components/Starfield";
+import Scene from "@/components/Scene";
+import ThemePicker from "@/components/ThemePicker";
+import { getTheme } from "@/lib/themes";
+import { useLocalTheme } from "@/lib/useTheme";
 
 const ADJECTIVES = ["sleepy", "cozy", "quiet", "moonlit", "dreamy", "velvet", "gentle", "drowsy"];
 const NOUNS = ["owl", "comet", "lantern", "otter", "teacup", "nebula", "fox", "willow"];
@@ -17,6 +20,7 @@ export default function Home() {
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
+  const [theme, setTheme] = useLocalTheme();
 
   useEffect(() => {
     try {
@@ -56,14 +60,18 @@ export default function Home() {
 
   return (
     <>
-      <Starfield />
+      <Scene theme={theme} />
       <main className="landing">
         <div className="glass landing-card">
           <div className="moon-icon" aria-hidden="true" />
           <h1 className="brand">
             Starlit <em>Desk</em>
           </h1>
-          <p className="tagline">A quiet room under the stars for studying side by side with a friend.</p>
+          <p className="tagline">A quiet room for studying side by side with a friend.</p>
+          <ThemePicker value={theme} onChange={setTheme} label="Pick a room" />
+          <p className="theme-name" style={{ margin: "-1rem 0 1.5rem" }}>
+            {getTheme(theme).name}
+          </p>
 
           <form onSubmit={join}>
             <div>

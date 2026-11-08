@@ -1,63 +1,116 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { audioContext, startCrickets, startFire, startRain, type Ambience } from "@/lib/audio";
+import { Voice } from "@/lib/sound/engine";
+import type { SoundId } from "@/lib/sound/recipes";
+import type { Theme } from "@/lib/themes";
 
 /**
  * Personal ambient sound mixer. Each person controls their own mix;
- * nothing here is shared over the call (and it isn't picked up by
- * the mic unless you're on speakers).
+ * nothing here is shared over the call.
  */
 
-const SOUNDS = [
-  { id: "rain", label: "Rain", make: startRain },
-  { id: "fire", label: "Fireplace", make: startFire },
-  { id: "night", label: "Crickets", make: startCrickets },
-] as const;
+const SOUNDS: Array<{ id: SoundId; label: string }> = [
+  { id: "rain", label: "Rain" },
+  { id: "fire", label: "Fireplace" },
+  { id: "crickets", label: "Crickets" },
+  { id: "waves", label: "Waves" },
+  { id: "wind", label: "Wind" },
+  { id: "birds", label: "Birds" },
+];
 
-type Id = (typeof SOUNDS)[number]["id"];
+type Status = "off" | "loading" | "on";
 
-export default function AmbiencePanel() {
-  const nodes = useRef<Partial<Record<Id, Ambience>>>({});
-  const [on, setOn] = useState<Record<Id, boolean>>({ rain: false, fire: false, night: false });
-  const [vol, setVol] = useState<Record<Id, number>>({ rain: 0.5, fire: 0.5, night: 0.35 });
+export default function AmbiencePanel({ theme }: { theme: Theme }) {
+  const voices = useRef<Partial<Record<SoundId, Voice>>>({});
+  const [status, setStatus] = useState<Record<SoundId, Status>>({
+    rain: "off",
+    fire: "off",
+    crickets: "off",
+    waves: "off",
+    wind: "off",
+    birds: "off",
+  });
+  const [vol, setVol] = useState<Record<SoundId, number>>({
+    rain: 0.6,
+    fire: 0.6,
+    crickets: 0.5,
+    waves: 0.6,
+    wind: 0.4,
+    birds: 0.5,
+  });
+  const volRef = useRef(vol);
+  volRef.current = vol;
 
-  const toggle = (id: Id, make: () => Ambience) => {
-    const node = nodes.current[id];
-    if (node) {
-      const ac = audioContext();
-      node.gain.gain.setTargetAtTime(0, ac.currentTime, 0.2);
-      setTimeout(() => node.stop(), 800);
-      delete nodes.current[id];
-      setOn((s) => ({ ...s, [id]: false }));
-    } else {
-      const n = make();
-      n.gain.gain.setTargetAtTime(vol[id] * 0.6, audioContext().currentTime, 0.4);
-      nodes.current[id] = n;
-      setOn((s) => ({ ...s, [id]: true }));
+  const turnOn = async (id: SoundId, volume = volRef.current[id]) => {
+    if (voices.current[id]) {
+      voices.current[id]!.setVolume(volume);
+      return;
+    }
+    const v = new Voice(id);
+    voices.current[id] = v;
+    setStatus((s) => ({ ...s, [id]: "loading" }));
+    try {
+      await v.start(volume);
+      // It may have been switched off while it was loading.
+      if (voices.current[id] === v) setStatus((s) => ({ ...s, [id]: "on" }));
+      else v.stop();
+    } catch {
+      delete voices.current[id];
+      setStatus((s) => ({ ...s, [id]: "off" }));
     }
   };
 
-  const setVolume = (id: Id, v: number) => {
-    setVol((s) => ({ ...s, [id]: v }));
-    const node = nodes.current[id];
-    if (node) node.gain.gain.setTargetAtTime(v * 0.6, audioContext().currentTime, 0.1);
+  const turnOff = (id: SoundId) => {
+    voices.current[id]?.stop();
+    delete voices.current[id];
+    setStatus((s) => ({ ...s, [id]: "off" }));
   };
 
+  const toggle = (id: SoundId) => (voices.current[id] ? turnOff(id) : turnOn(id));
+
+  const setVolume = (id: SoundId, v: number) => {
+    setVol((s) => ({ ...s, [id]: v }));
+    voices.current[id]?.setVolume(v);
+  };
+
+  const playThemeMix = () => {
+    for (const { id } of SOUNDS) {
+      const level = theme.mix[id];
+      if (level === undefined) turnOff(id);
+      else {
+        setVol((s) => ({ ...s, [id]: level }));
+        void turnOn(id, level);
+      }
+    }
+  };
+
+  const anyOn = Object.values(status).some((s) => s !== "off");
+
   useEffect(() => {
-    const current = nodes.current;
-    return () => {
-      Object.values(current).forEach((n) => n?.stop());
-    };
+    const current = voices.current;
+    return () => Object.values(current).forEach((v) => v?.stop());
   }, []);
 
   return (
     <section className="glass panel" aria-label="Ambient sounds">
       <h2>Your ambience</h2>
-      {SOUNDS.map(({ id, label, make }) => (
+
+      <div className="row" style={{ marginBottom: "0.85rem" }}>
+        <button className="btn btn-ghost" onClick={playThemeMix} title={`Play the sounds of ${theme.name}`}>
+          ♪ {theme.name} mix
+        </button>
+        {anyOn && (
+          <button className="btn btn-ghost" style={{ flex: "0 0 auto" }} onClick={() => SOUNDS.forEach(({ id }) => turnOff(id))}>
+            Stop all
+          </button>
+        )}
+      </div>
+
+      {SOUNDS.map(({ id, label }) => (
         <div className="sound" key={id}>
-          <button className="btn btn-ghost" aria-pressed={on[id]} onClick={() => toggle(id, make)}>
-            {label}
+          <button className="btn btn-ghost" aria-pressed={status[id] !== "off"} aria-busy={status[id] === "loading"} onClick={() => toggle(id)}>
+            {status[id] === "loading" ? "…" : label}
           </button>
           <input
             type="range"

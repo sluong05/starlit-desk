@@ -5,8 +5,9 @@ Study side by side with a friend over video, in a cozy room under the stars.
 - **Video call** for two, powered by [LiveKit](https://livekit.io) (WebRTC, with TURN handled for you)
 - **Invite links**: open a desk, press *Invite*, send the link
 - **Shared Pomodoro timer** (25/5, 50/10, 90/15) that stays in sync for both of you
-- **Personal ambience mixer**: rain, fireplace, crickets, all generated in the browser (no audio files)
-- **Animated night sky** with twinkling stars, a moon, and the occasional shooting star
+- **Five room themes** you pick together (synced for both people): Starlit Night, Rainy Café, Forest Cabin, Sakura Morning, Seaside Dusk
+- **Ambience mixer**: rain, fireplace, crickets, waves, wind, birds — synthesized in the browser (no audio files), plus a one-tap mix for each theme
+- **Text chat** and **mute indicators**
 
 Built with Next.js 16 (App Router), React 19, and TypeScript.
 
@@ -47,22 +48,33 @@ app/
   room/[code]/page.tsx   the room: fetches a token, connects, lays out the desk
   api/token/route.ts     signs a LiveKit access token (server-side; keeps your secret safe)
 components/
-  Starfield.tsx          canvas night sky
+  Scene.tsx              animated background, cross-fades between themes
+  ThemePicker.tsx        theme swatches
   VideoStage.tsx         your window + your friend's window
   Pomodoro.tsx           shared timer (LiveKit data channel)
-  AmbiencePanel.tsx      local sound mixer
+  Chat.tsx               room chat
+  AmbiencePanel.tsx      personal sound mixer
 lib/
-  audio.ts               Web Audio generators: rain, fire, crickets, chime
+  themes.ts              theme list (name, swatch, suggested sound mix)
+  scenes.ts              the canvas drawing for each theme
+  useSyncedState.ts      tiny "shared value" hook used for the room theme
+  sound/dsp.ts           filters, noise, seamless-loop helpers
+  sound/recipes.ts       how each ambient sound is built
+  sound/synth.worker.ts  renders sounds off the main thread
+  sound/engine.ts        playback: reverb, compressor, looping voices, timer chime
 ```
 
 **Timer sync.** The timer's full state is broadcast on the `timer` data topic whenever someone presses a button, and the last write wins. A running timer is stored as an absolute `endsAt` timestamp, so both browsers count down on their own without chatting every second. When someone joins, they send `hello` and whoever is already there replies with the current state. Both computers' clocks need to be roughly right; normal OS time sync is plenty.
 
 **Rooms.** A room code like `cozy-owl-482` is the only key, so anyone with the link can join. That's fine for friends. Add auth before making it public.
 
+**Themes.** The palette for each theme is a block of CSS variables in `app/globals.css` (`[data-theme="…"]`); the moving scene is a function in `lib/scenes.ts`. To add a theme, add an entry to `lib/themes.ts`, a palette block, and a scene.
+
+**Sounds.** Each sound is rendered once into a seamless stereo loop (20–36 s) in a Web Worker, then looped with a random start point. To swap in recorded audio later (e.g. ElevenLabs), replace `loadSound` in `lib/sound/engine.ts` with a `fetch` + `decodeAudioData` of your file; the rest of the mixer stays the same.
+
 ---
 
 ## Ideas for next steps
-- More themes: rainy café, forest cabin, beach at dusk. Make the background a prop and add a theme picker that syncs like the timer.
 - Background segmentation so you both appear *inside* the scene (`@livekit/track-processors` has a background-replacement processor).
 - Shared to-do list (same data-channel pattern as the timer).
 - Study streaks and a "focus blocks together" history (needs a small DB, e.g. Supabase).

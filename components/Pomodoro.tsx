@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useDataChannel } from "@livekit/components-react";
-import { chime } from "@/lib/audio";
+import { chime } from "@/lib/sound/engine";
 
 /**
  * A Pomodoro timer shared by everyone in the room.

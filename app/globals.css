@@ -1,18 +1,162 @@
-:root {
-  --night-0: #070b1f;
-  --night-1: #0f1638;
-  --night-2: #1b2257;
+/* ---------- themes ----------
+   Each theme sets the palette; the animated scene lives in lib/scenes.ts. */
+
+:root,
+[data-theme="starlit"] {
+  --page-solid: #070b1f;
   --lamp: #ffd28a;
+  --lamp-rgb: 255, 210, 138;
   --lamp-soft: rgba(255, 210, 138, 0.18);
+  --on-lamp: #2b1d05;
   --lavender: #c9b8ff;
+  --soft-rgb: 201, 184, 255;
   --mint: #9fe6cf;
   --ink: #f4f1ff;
   --ink-dim: #b9b4d9;
   --glass: rgba(20, 26, 66, 0.55);
   --glass-edge: rgba(201, 184, 255, 0.22);
+  --field: rgba(7, 11, 31, 0.6);
+  --ghost: rgba(255, 255, 255, 0.06);
+  --ghost-hover: rgba(255, 255, 255, 0.12);
+  --track: rgba(255, 255, 255, 0.08);
+  --tile-bg: linear-gradient(160deg, #19204f, #0c1131);
   --radius: 22px;
   --font-display: "Fraunces", Georgia, serif;
   --font-body: "Nunito", system-ui, sans-serif;
+  color-scheme: dark;
+}
+
+[data-theme="cafe"] {
+  --page-solid: #1a1410;
+  --lamp: #ffb46b;
+  --lamp-rgb: 255, 180, 107;
+  --lamp-soft: rgba(255, 180, 107, 0.2);
+  --on-lamp: #2e1606;
+  --lavender: #e7c3a3;
+  --soft-rgb: 231, 195, 163;
+  --mint: #9ed9c8;
+  --ink: #fbf1e6;
+  --ink-dim: #c9b4a2;
+  --glass: rgba(38, 26, 18, 0.6);
+  --glass-edge: rgba(231, 195, 163, 0.22);
+  --field: rgba(20, 13, 8, 0.6);
+  --tile-bg: linear-gradient(160deg, #3a2a1e, #1a1410);
+}
+
+[data-theme="forest"] {
+  --page-solid: #0a1712;
+  --lamp: #d9f27e;
+  --lamp-rgb: 217, 242, 126;
+  --lamp-soft: rgba(217, 242, 126, 0.18);
+  --on-lamp: #1a2606;
+  --lavender: #a8d8c2;
+  --soft-rgb: 168, 216, 194;
+  --mint: #ffcf7a;
+  --ink: #eef7ee;
+  --ink-dim: #a9c4b4;
+  --glass: rgba(12, 30, 26, 0.6);
+  --glass-edge: rgba(168, 216, 194, 0.2);
+  --field: rgba(6, 16, 12, 0.6);
+  --tile-bg: linear-gradient(160deg, #1d3a34, #0a1712);
+}
+
+[data-theme="sakura"] {
+  --page-solid: #ffe9ef;
+  --lamp: #e8789a;
+  --lamp-rgb: 232, 120, 154;
+  --lamp-soft: rgba(232, 120, 154, 0.2);
+  --on-lamp: #ffffff;
+  --lavender: #b77fb0;
+  --soft-rgb: 183, 127, 176;
+  --mint: #4fae8f;
+  --ink: #3d2340;
+  --ink-dim: #7d5a7d;
+  --glass: rgba(255, 255, 255, 0.62);
+  --glass-edge: rgba(232, 120, 154, 0.28);
+  --field: rgba(255, 255, 255, 0.8);
+  --ghost: rgba(232, 120, 154, 0.08);
+  --ghost-hover: rgba(232, 120, 154, 0.16);
+  --track: rgba(61, 35, 64, 0.1);
+  --tile-bg: linear-gradient(160deg, #ffd6e4, #f3b6cc);
+  color-scheme: light;
+}
+
+[data-theme="seaside"] {
+  --page-solid: #141836;
+  --lamp: #ffb38a;
+  --lamp-rgb: 255, 179, 138;
+  --lamp-soft: rgba(255, 179, 138, 0.2);
+  --on-lamp: #2e1206;
+  --lavender: #f0a8c8;
+  --soft-rgb: 240, 168, 200;
+  --mint: #8fe0e0;
+  --ink: #fff2ee;
+  --ink-dim: #d4b4c8;
+  --glass: rgba(36, 24, 62, 0.55);
+  --glass-edge: rgba(240, 168, 200, 0.22);
+  --field: rgba(20, 14, 40, 0.6);
+  --tile-bg: linear-gradient(160deg, #4b2c6e, #1f2550);
+}
+
+/* smooth palette changes when switching themes */
+.glass,
+.btn,
+.input,
+.tile,
+.room-title,
+.brand {
+  transition:
+    background-color 0.6s ease,
+    color 0.6s ease,
+    border-color 0.6s ease,
+    box-shadow 0.2s ease,
+    transform 0.15s ease;
+}
+
+/* theme picker */
+.theme-picker {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.swatch {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  padding: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
+}
+
+.swatch:hover {
+  transform: scale(1.1);
+}
+
+.swatch[aria-checked="true"] {
+  border-color: var(--lamp);
+  box-shadow:
+    0 0 0 3px var(--lamp-soft),
+    0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.room-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  flex-wrap: wrap;
+}
+
+.theme-name {
+  color: var(--ink-dim);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.landing .theme-picker {
+  justify-content: center;
+  margin: -0.75rem 0 1.5rem;
 }
 
 * {
@@ -24,18 +168,14 @@ body {
   margin: 0;
   padding: 0;
   min-height: 100%;
-  background: var(--night-0);
+  background: var(--page-solid);
   color: var(--ink);
   font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;
 }
 
 body {
-  background:
-    radial-gradient(1200px 700px at 80% -10%, #2a2a6e 0%, transparent 60%),
-    radial-gradient(900px 600px at 0% 110%, #1d3a5c 0%, transparent 55%),
-    linear-gradient(180deg, var(--night-1) 0%, var(--night-0) 100%);
-  background-attachment: fixed;
+  background: var(--page-solid);
 }
 
 a {
@@ -74,26 +214,26 @@ button {
 
 .btn-lamp {
   background: var(--lamp);
-  color: #2b1d05;
-  box-shadow: 0 0 0 0 var(--lamp-soft), 0 8px 24px rgba(255, 210, 138, 0.25);
+  color: var(--on-lamp);
+  box-shadow: 0 0 0 0 var(--lamp-soft), 0 8px 24px rgba(var(--lamp-rgb), 0.25);
 }
 
 .btn-lamp:hover {
-  box-shadow: 0 0 0 6px var(--lamp-soft), 0 8px 24px rgba(255, 210, 138, 0.35);
+  box-shadow: 0 0 0 6px var(--lamp-soft), 0 8px 24px rgba(var(--lamp-rgb), 0.35);
 }
 
 .btn-ghost {
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--ghost);
   color: var(--ink);
   border: 1px solid var(--glass-edge);
 }
 
 .btn-ghost:hover {
-  background: rgba(255, 255, 255, 0.12);
+  background: var(--ghost-hover);
 }
 
 .btn-ghost[aria-pressed="true"] {
-  background: rgba(201, 184, 255, 0.22);
+  background: rgba(var(--soft-rgb), 0.22);
   border-color: var(--lavender);
 }
 
@@ -102,7 +242,7 @@ button {
   padding: 0.85rem 1rem;
   border-radius: 14px;
   border: 1px solid var(--glass-edge);
-  background: rgba(7, 11, 31, 0.6);
+  background: var(--field);
   color: var(--ink);
   font-size: 1rem;
   font-family: inherit;
@@ -177,7 +317,7 @@ button {
   /* crescent: a transparent circle whose inset shadow is the lit edge */
   background: transparent;
   box-shadow: inset -16px 8px 0 0 var(--lamp);
-  filter: drop-shadow(0 0 14px rgba(255, 210, 138, 0.55));
+  filter: drop-shadow(0 0 14px rgba(var(--lamp-rgb), 0.55));
   transform: rotate(-20deg);
 }
 
@@ -270,11 +410,11 @@ button {
   aspect-ratio: 4 / 3;
   border-radius: 26px;
   overflow: hidden;
-  background: linear-gradient(160deg, #19204f, #0c1131);
-  border: 2px solid rgba(255, 210, 138, 0.35);
+  background: var(--tile-bg);
+  border: 2px solid rgba(var(--lamp-rgb), 0.35);
   box-shadow:
-    0 0 0 6px rgba(255, 210, 138, 0.06),
-    0 0 50px rgba(255, 210, 138, 0.12),
+    0 0 0 6px rgba(var(--lamp-rgb), 0.06),
+    0 0 50px rgba(var(--lamp-rgb), 0.12),
     0 25px 60px rgba(0, 0, 0, 0.45);
 }
 
@@ -296,6 +436,7 @@ button {
   padding: 0.3rem 0.75rem;
   border-radius: 999px;
   background: rgba(7, 11, 31, 0.65);
+  color: #fff;
   font-weight: 800;
   font-size: 0.85rem;
   display: flex;
@@ -386,7 +527,7 @@ button {
 .timer-progress {
   height: 6px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--track);
   overflow: hidden;
   margin-bottom: 1rem;
 }
@@ -492,7 +633,7 @@ button {
 .chat-bubble {
   padding: 0.5rem 0.8rem;
   border-radius: 16px 16px 16px 4px;
-  background: rgba(201, 184, 255, 0.16);
+  background: rgba(var(--soft-rgb), 0.16);
   border: 1px solid var(--glass-edge);
   line-height: 1.4;
   font-size: 0.92rem;
@@ -503,8 +644,8 @@ button {
 
 .chat-msg.mine .chat-bubble {
   border-radius: 16px 16px 4px 16px;
-  background: rgba(255, 210, 138, 0.18);
-  border-color: rgba(255, 210, 138, 0.35);
+  background: rgba(var(--lamp-rgb), 0.18);
+  border-color: rgba(var(--lamp-rgb), 0.35);
 }
 
 .chat-form {
@@ -575,7 +716,7 @@ input[type="range"] {
   padding: 0.6rem 1.1rem;
   border-radius: 999px;
   background: var(--lamp);
-  color: #2b1d05;
+  color: var(--on-lamp);
   font-weight: 800;
   z-index: 10;
   animation: rise 0.25s ease;
