@@ -1,26 +1,32 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Track } from "livekit-client";
-import { DisconnectButton, TrackToggle, useLocalParticipant, useParticipants } from "@livekit/components-react";
+import { ConnectionState, RoomEvent, type Participant } from "livekit-client";
+import { useConnectionState, useLocalParticipant, useParticipants, useRoomContext } from "@livekit/components-react";
 import VideoStage from "@/components/VideoStage";
 import Pomodoro, { type Phase } from "@/components/Pomodoro";
 import AmbiencePanel from "@/components/AmbiencePanel";
 import Chat from "@/components/Chat";
-import ScreenShareButton from "@/components/ScreenShareButton";
+import ControlBar from "@/components/ControlBar";
+import SettingsDialog from "@/components/SettingsDialog";
 import ThemePicker from "@/components/ThemePicker";
 import GameArena, { type Session } from "@/components/games/GameArena";
+import { LinkIcon } from "@/components/icons";
 import { getTheme, type ThemeId } from "@/lib/themes";
 import { useSyncedState } from "@/lib/useSyncedState";
+import { useTopic } from "@/lib/useTopic";
 import { useGameLog } from "@/lib/games/useGameLog";
 import { fmtTime, type Player } from "@/lib/games/core";
+import { playAlways } from "@/lib/games/sfx";
+import { getPrefs } from "@/lib/prefs";
 
 type RoomMode = "study" | "gamenight";
+type Float = { id: string; emoji: string; name: string; x: number };
+type ReactionMsg = { type: "emoji"; emoji: string; name: string } | { type: "hand"; up: boolean; id: string } | { type: "hello" };
 
 /** Everything inside a connected room. */
 export default function RoomInside({
   code,
-  inviteUrl,
   theme,
   initialTheme,
   setTheme,
@@ -28,7 +34,6 @@ export default function RoomInside({
   flash,
 }: {
   code: string;
-  inviteUrl: string;
   theme: ThemeId;
   initialTheme: ThemeId;
   setTheme: (t: ThemeId) => void;
@@ -41,6 +46,7 @@ export default function RoomInside({
 
   const [phase, setPhase] = useState<Phase>({ mode: "focus", endsAt: null, remainingMs: 25 * 60_000 });
   const [arenaOpen, setArenaOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 1000);
@@ -55,6 +61,8 @@ export default function RoomInside({
   const breakLeftMs = onBreak ? phaseLeft : null;
 
   // Players for the games: you first, then everyone else in the call.
+  const room = useRoomContext();
+  const connection = useConnectionState();
   const participants = useParticipants();
   const { localParticipant } = useLocalParticipant();
   const players: Player[] = useMemo(
@@ -66,6 +74,70 @@ export default function RoomInside({
   );
   const me = players.find((p) => p.isMe) ?? { id: localParticipant.identity, name: "You", isMe: true };
   const [acts, dispatch] = useGameLog(session?.sid ?? null, me.id);
+
+  /* ---------- reactions and raised hands ---------- */
+
+  const [floats, setFloats] = useState<Float[]>([]);
+  const [hands, setHands] = useState<Record<string, boolean>>({});
+  const myHand = !!hands[me.id];
+  const myHandRef = useRef(myHand);
+  myHandRef.current = myHand;
+  const meRef = useRef(me);
+  meRef.current = me;
+
+  const showFloat = useCallback((emoji: string, name: string) => {
+    const id = Math.random().toString(36).slice(2);
+    setFloats((f) => [...f.slice(-11), { id, emoji, name, x: 12 + Math.random() * 76 }]);
+    setTimeout(() => setFloats((f) => f.filter((x) => x.id !== id)), 3200);
+    playAlways("pop");
+  }, []);
+
+  const post = useTopic("reactions", (data) => {
+    const msg = data as ReactionMsg;
+    if (msg.type === "emoji") showFloat(msg.emoji, msg.name);
+    else if (msg.type === "hand") {
+      setHands((h) => ({ ...h, [msg.id]: msg.up }));
+      if (msg.up) playAlways("blip");
+    } else if (msg.type === "hello" && myHandRef.current) post({ type: "hand", up: true, id: meRef.current.id } satisfies ReactionMsg);
+  });
+
+  useEffect(() => {
+    const t = setTimeout(() => post({ type: "hello" } satisfies ReactionMsg), 1000);
+    return () => clearTimeout(t);
+  }, [post]);
+
+  const react = (emoji: string) => {
+    showFloat(emoji, "You");
+    post({ type: "emoji", emoji, name: me.name } satisfies ReactionMsg);
+  };
+
+  const toggleHand = () => {
+    const up = !myHand;
+    setHands((h) => ({ ...h, [me.id]: up }));
+    post({ type: "hand", up, id: me.id } satisfies ReactionMsg);
+  };
+
+  /* ---------- people coming and going ---------- */
+
+  useEffect(() => {
+    const joined = (p: Participant) => {
+      flash(`${p.name || "Someone"} joined ✦`);
+      if (getPrefs().chimes) playAlways("good");
+    };
+    const left = (p: Participant) => {
+      flash(`${p.name || "Someone"} left`);
+      setHands((h) => ({ ...h, [p.identity]: false }));
+      if (getPrefs().chimes) playAlways("back");
+    };
+    room.on(RoomEvent.ParticipantConnected, joined);
+    room.on(RoomEvent.ParticipantDisconnected, left);
+    return () => {
+      room.off(RoomEvent.ParticipantConnected, joined);
+      room.off(RoomEvent.ParticipantDisconnected, left);
+    };
+  }, [room, flash]);
+
+  /* ---------- games ---------- */
 
   // A new break starts fresh: clear the last break's game.
   const wasBreak = useRef(onBreak);
@@ -94,6 +166,7 @@ export default function RoomInside({
   };
 
   const onPhase = useCallback((p: Phase) => setPhase(p), []);
+  const closeSettings = useCallback(() => setSettingsOpen(false), []);
 
   const arena = arenaOpen ? (
     <GameArena
@@ -111,12 +184,20 @@ export default function RoomInside({
     />
   ) : undefined;
 
+  const reconnecting = connection === ConnectionState.Reconnecting || connection === ConnectionState.SignalReconnecting;
+
   return (
     <main className={`room ${gameNight ? "room-gamenight" : ""}`}>
       <header className="room-top">
-        <h1 className="room-title">
-          Starlit Desk<span>#{code}</span>
-        </h1>
+        <div className="room-brand">
+          <h1 className="room-title">Starlit Desk</h1>
+          <button className="room-code" onClick={copyInvite} title="Copy invite link">
+            #{code} <LinkIcon size={13} />
+          </button>
+          <span className="people-count" title={players.map((p) => p.name).join(", ")}>
+            {players.length} {players.length === 1 ? "person" : "people"} here
+          </span>
+        </div>
         <div className="room-actions">
           <div className="seg room-mode" role="radiogroup" aria-label="Room mode">
             <button className="btn btn-ghost" role="radio" aria-checked={!gameNight} aria-pressed={!gameNight} onClick={() => switchMode("study")}>
@@ -133,9 +214,15 @@ export default function RoomInside({
         </div>
       </header>
 
+      {reconnecting && (
+        <div className="break-banner glass reconnecting" role="status">
+          <span>Your connection dropped for a moment. Reconnecting…</span>
+        </div>
+      )}
+
       {!arenaOpen && playable && (
         <div className="break-banner glass">
-          <span>{gameNight ? "🎲 It's Game Night — pick something to play together." : `☾ Break time${breakLeftMs !== null ? ` (${fmtTime(breakLeftMs)} left)` : ""} — play a quick game together?`}</span>
+          <span>{gameNight ? "🎲 It's Game Night. Pick something to play together." : `☾ Break time${breakLeftMs !== null ? ` (${fmtTime(breakLeftMs)} left)` : ""}. Play a quick game together?`}</span>
           <button className="btn btn-lamp btn-sm" onClick={() => setArenaOpen(true)}>
             {session ? "Back to the game" : "Play"}
           </button>
@@ -143,7 +230,17 @@ export default function RoomInside({
       )}
 
       <div className="room-main">
-        <VideoStage inviteUrl={inviteUrl} main={arena} />
+        <div className="stage-wrap">
+          <VideoStage main={arena} hands={hands} onInvite={copyInvite} />
+          <div className="reaction-layer" aria-live="polite">
+            {floats.map((f) => (
+              <span key={f.id} className="reaction-float" style={{ left: `${f.x}%` }}>
+                <b>{f.emoji}</b>
+                <small>{f.name}</small>
+              </span>
+            ))}
+          </div>
+        </div>
         <aside className="side">
           {/* kept mounted in Game Night so the shared timer isn't lost */}
           <div hidden={gameNight}>
@@ -154,24 +251,19 @@ export default function RoomInside({
         </aside>
       </div>
 
-      <footer className="glass controls">
-        <TrackToggle source={Track.Source.Microphone} className="btn btn-ghost">
-          Mic
-        </TrackToggle>
-        <TrackToggle source={Track.Source.Camera} className="btn btn-ghost">
-          Camera
-        </TrackToggle>
-        <ScreenShareButton onError={flash} />
-        <button
-          className="btn btn-ghost"
-          aria-pressed={arenaOpen}
-          onClick={() => setArenaOpen((o) => !o)}
-          title={playable ? "Games" : untilBreakMs !== null ? `Games unlock in ${fmtTime(untilBreakMs)}` : "Games unlock on your break"}
-        >
-          {playable ? "🎲 Games" : `🔒 Games${untilBreakMs !== null ? ` · ${fmtTime(untilBreakMs)}` : ""}`}
-        </button>
-        <DisconnectButton className="btn btn-leave">Leave</DisconnectButton>
-      </footer>
+      <ControlBar
+        onError={flash}
+        onReact={react}
+        handUp={myHand}
+        onHand={toggleHand}
+        gamesOpen={arenaOpen}
+        gamesLocked={!playable}
+        gamesLabel={playable ? "Games" : untilBreakMs !== null ? `Games in ${fmtTime(untilBreakMs)}` : "Games"}
+        onGames={() => setArenaOpen((o) => !o)}
+        onSettings={() => setSettingsOpen(true)}
+      />
+
+      {settingsOpen && <SettingsDialog onClose={closeSettings} flash={flash} />}
     </main>
   );
 }

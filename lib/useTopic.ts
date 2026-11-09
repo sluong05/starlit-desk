@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef } from "react";
 import { useDataChannel } from "@livekit/components-react";
 
-type Incoming = { payload: Uint8Array };
+type Incoming = { payload: Uint8Array; from?: { identity: string; name?: string } };
 
 /**
  * A data-channel topic with a stable `send`.

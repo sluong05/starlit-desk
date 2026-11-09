@@ -1,12 +1,15 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { LiveKitRoom, RoomAudioRenderer } from "@livekit/components-react";
 import Scene from "@/components/Scene";
 import { savedTheme, type ThemeId } from "@/lib/themes";
 import { useApplyTheme } from "@/lib/useTheme";
 import RoomInside from "@/components/RoomInside";
+import Lobby from "@/components/Lobby";
+import Mascot from "@/components/Mascot";
+import { captureOptions, getPrefs } from "@/lib/prefs";
 
 export default function RoomPage() {
   return (
@@ -22,7 +25,9 @@ function Room() {
   const router = useRouter();
   const nameFromUrl = search.get("name") ?? "";
 
-  const [name, setName] = useState(nameFromUrl);
+  const [savedName, setSavedName] = useState(nameFromUrl);
+  // Set once you press Join in the lobby.
+  const [joinName, setJoinName] = useState("");
   const [token, setToken] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [toast, setToast] = useState("");
@@ -40,21 +45,21 @@ function Room() {
   const serverUrl = process.env.NEXT_PUBLIC_LIVEKIT_URL;
   const inviteUrl = typeof window !== "undefined" ? `${window.location.origin}/room/${code}` : "";
 
-  // Friends who open a bare invite link pick a name first.
+  // Prefill the lobby with the name you used last time.
   useEffect(() => {
     if (nameFromUrl) return;
     try {
       const saved = localStorage.getItem("starlit:name");
-      if (saved) setName(saved);
+      if (saved) setSavedName(saved);
     } catch {
       /* ignore */
     }
   }, [nameFromUrl]);
 
   useEffect(() => {
-    if (!nameFromUrl) return;
+    if (!joinName) return;
     let cancelled = false;
-    fetch(`/api/token?room=${encodeURIComponent(code)}&name=${encodeURIComponent(nameFromUrl)}`)
+    fetch(`/api/token?room=${encodeURIComponent(code)}&name=${encodeURIComponent(joinName)}`)
       .then(async (r) => {
         const body = await r.json();
         if (!r.ok) throw new Error(body.error || "Couldn't get a room pass.");
@@ -64,21 +69,33 @@ function Room() {
     return () => {
       cancelled = true;
     };
-  }, [code, nameFromUrl]);
+  }, [code, joinName]);
 
-  const flash = (msg: string) => {
+  // Camera/mic choices from the lobby, fixed for this visit.
+  const call = useMemo(() => {
+    const p = getPrefs();
+    const c = captureOptions(p);
+    return {
+      audio: p.micOn,
+      video: p.camOn,
+      options: { adaptiveStream: true, dynacast: true, audioCaptureDefaults: c.audio, videoCaptureDefaults: c.video, audioOutput: p.speakerId ? { deviceId: p.speakerId } : undefined },
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [joinName]);
+
+  const flash = useCallback((msg: string) => {
     setToast(msg);
-    setTimeout(() => setToast(""), 2200);
-  };
+    setTimeout(() => setToast((t) => (t === msg ? "" : t)), 2600);
+  }, []);
 
-  const copyInvite = async () => {
+  const copyInvite = useCallback(async () => {
     try {
       await navigator.clipboard.writeText(inviteUrl);
       flash("Invite link copied ✦");
     } catch {
       flash(inviteUrl);
     }
-  };
+  }, [inviteUrl, flash]);
 
   const scene = <Scene theme={theme} />;
 
@@ -86,40 +103,11 @@ function Room() {
     return <Status scene={scene} title="Almost there" body="Set NEXT_PUBLIC_LIVEKIT_URL in .env.local (see README), then restart the dev server." />;
   }
 
-  if (!nameFromUrl) {
+  if (!joinName) {
     return (
       <>
-      {scene}
-      <main className="status-screen">
-        <form
-          className="glass"
-          onSubmit={(e) => {
-            e.preventDefault();
-            const n = name.trim();
-            if (!n) return;
-            try {
-              localStorage.setItem("starlit:name", n);
-            } catch {
-              /* ignore */
-            }
-            router.replace(`/room/${code}?name=${encodeURIComponent(n)}`);
-          }}
-          style={{ display: "grid", gap: "1rem", textAlign: "left", width: "min(420px, 100%)" }}
-        >
-          <h1 className="room-title" style={{ textAlign: "center" }}>
-            You&apos;re invited to a desk ✦
-          </h1>
-          <div>
-            <label className="label" htmlFor="name">
-              Your name
-            </label>
-            <input id="name" className="input" value={name} maxLength={24} onChange={(e) => setName(e.target.value)} autoFocus />
-          </div>
-          <button className="btn btn-lamp" type="submit">
-            Take a seat
-          </button>
-        </form>
-      </main>
+        {scene}
+        <Lobby code={code} initialName={savedName} onJoin={setJoinName} />
       </>
     );
   }
@@ -132,8 +120,9 @@ function Room() {
       serverUrl={serverUrl}
       token={token}
       connect
-      video
-      audio
+      video={call.video}
+      audio={call.audio}
+      options={call.options}
       onDisconnected={() => router.push("/")}
       onError={(e) => setError(e.message)}
       data-lk-theme="default"
@@ -142,7 +131,6 @@ function Room() {
       {scene}
       <RoomInside
         code={code}
-        inviteUrl={inviteUrl}
         theme={theme}
         initialTheme={initialTheme}
         setTheme={setTheme}
@@ -161,6 +149,7 @@ function Status({ title, body, scene }: { title: string; body?: string; scene?: 
     {scene}
     <main className="status-screen">
       <div className="glass">
+        <Mascot pose="sit" size={84} />
         <h1 className="room-title">{title}</h1>
         {body && <p style={{ color: "var(--ink-dim)", lineHeight: 1.5 }}>{body}</p>}
         {body && (

@@ -8,6 +8,10 @@ Study side by side with a friend over video, in a cozy room under the stars.
 - **Five room themes** you pick together (synced for both people): Starlit Night, Rainy Café, Forest Cabin, Sakura Morning, Seaside Dusk
 - **Ambience mixer**: rain, fireplace, crickets, waves, wind, birds — synthesized in the browser (no audio files), plus a one-tap mix for each theme
 - **Text chat**, **mute indicators**, **screen sharing**, and **click-to-enlarge** video
+- **A lobby before you join**: camera preview, mic level meter, device pickers, join muted or with camera off
+- **Call controls like Zoom or Meet**: mute, stop video, share screen, emoji reactions, raise hand, settings, leave; `Ctrl/⌘+D` mutes and `Ctrl/⌘+E` toggles the camera
+- **Settings**: microphone, camera and speaker choice, mirror my video, save data, noise suppression, join/leave chimes, game sounds
+- Speaking ring, connection-quality bars, full screen for an enlarged tile, reconnecting notice, up to six desks on screen
 - **12 break games**, co-op or race: Moonword, Constellations, Deep Sky, Hive, Star Ladder, Scramble, Emoji Cinema, Timeline, Alphabet Sprint, Jinx, Star Math, Mini Sudoku. In **Study** mode they unlock only during Pomodoro breaks; **Game Night** mode unlocks them anytime.
 
 Built with Next.js 16 (App Router), React 19, and TypeScript.

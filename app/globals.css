@@ -425,10 +425,7 @@ button {
   display: block;
 }
 
-/* mirror only your own camera, never a shared screen */
-.tile-local.tile-camera video {
-  transform: scaleX(-1);
-}
+/* your own camera is mirrored via .tile-mirror in call.css */
 
 .tile[role="button"] {
   cursor: pointer;

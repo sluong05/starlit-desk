@@ -175,4 +175,13 @@ export function sfx(name: Sfx) {
   }
 }
 
+/** For call sounds (joins, reactions): ignores the game-sound mute. */
+export function playAlways(name: Sfx) {
+  try {
+    SOUNDS[name]();
+  } catch {
+    /* no audio */
+  }
+}
+
 export const SFX_NAMES = Object.keys(SOUNDS) as Sfx[];

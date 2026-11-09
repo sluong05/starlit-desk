@@ -1,25 +1,38 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Track } from "livekit-client";
+import { ConnectionQuality, Track } from "livekit-client";
 import {
   VideoTrack,
   isTrackReference,
+  useConnectionQualityIndicator,
   useIsMuted,
   useIsSpeaking,
   useTracks,
   type TrackReferenceOrPlaceholder,
 } from "@livekit/components-react";
+import Mascot from "@/components/Mascot";
+import { ExpandIcon, FullscreenIcon, LinkIcon, MicOffIcon, ScreenIcon, ShrinkIcon } from "@/components/icons";
+import { usePrefs } from "@/lib/prefs";
 
 const keyOf = (t: TrackReferenceOrPlaceholder) => `${t.participant.identity}:${t.source}`;
 const isScreen = (t: TrackReferenceOrPlaceholder) => t.source === Track.Source.ScreenShare;
+const MAX_FRIENDS = 5;
 
 /**
- * The video area. Normally your desk and your friend's desk sit side by side.
- * Click any tile to make it big (the others shrink into a strip); click it
- * again to go back. A new screen share is enlarged automatically.
+ * The video area. Everyone's camera sits in a grid. Click any tile to make it
+ * big (the others move into a strip); click again to go back. A new screen
+ * share is enlarged automatically. In game mode the game takes the big spot.
  */
-export default function VideoStage({ inviteUrl, main }: { inviteUrl: string; main?: React.ReactNode }) {
+export default function VideoStage({
+  main,
+  hands,
+  onInvite,
+}: {
+  main?: React.ReactNode;
+  hands: Record<string, boolean>;
+  onInvite: () => void;
+}) {
   const tracks = useTracks(
     [
       { source: Track.Source.Camera, withPlaceholder: true },
@@ -28,14 +41,13 @@ export default function VideoStage({ inviteUrl, main }: { inviteUrl: string; mai
     { onlySubscribed: false },
   );
 
-  // Local camera first, then at most one friend, then any screen shares.
-  // (Starlit Desk is a two-person room.)
+  // You first, then your friends, then any shared screens.
   const cams = tracks.filter((t) => !isScreen(t));
   const localCam = cams.filter((t) => t.participant.isLocal).slice(0, 1);
   const remoteCams = cams.filter((t) => !t.participant.isLocal);
   const screens = tracks.filter(isScreen);
-  const shown = [...localCam, ...remoteCams.slice(0, 1), ...screens];
-  const extra = remoteCams.length - 1;
+  const shown = [...localCam, ...remoteCams.slice(0, MAX_FRIENDS), ...screens];
+  const extra = remoteCams.length - MAX_FRIENDS;
 
   const [focus, setFocus] = useState<string | null>(null);
 
@@ -54,34 +66,23 @@ export default function VideoStage({ inviteUrl, main }: { inviteUrl: string; mai
     if (focus && !focused) setFocus(null);
   }, [focus, focused]);
 
-  // Escape returns to side-by-side.
+  // Escape returns to the grid.
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setFocus(null);
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && !document.fullscreenElement && setFocus(null);
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
   const toggle = (k: string) => setFocus((f) => (f === k ? null : k));
+  const hand = (t: TrackReferenceOrPlaceholder) => !isScreen(t) && !!hands[t.participant.identity];
 
-  const waiting = remoteCams.length === 0 && (
-    <div className="tile tile-empty">
-      <div>
-        <strong>Waiting for your study buddy…</strong>
-        Send them the invite link — it&apos;s copied when you press <em>Invite</em>.
-        <br />
-        <small style={{ wordBreak: "break-all", opacity: 0.8 }}>{inviteUrl}</small>
-      </div>
-    </div>
-  );
-
-  // Game mode: the game takes the big spot and everyone's video sits in the strip.
   if (main) {
     return (
       <div className="stage stage-focus stage-game">
         {main}
         <div className="stage-strip">
           {shown.map((t) => (
-            <Tile key={keyOf(t)} trackRef={t} small />
+            <Tile key={keyOf(t)} trackRef={t} small hand={hand(t)} />
           ))}
         </div>
       </div>
@@ -92,10 +93,10 @@ export default function VideoStage({ inviteUrl, main }: { inviteUrl: string; mai
     const others = shown.filter((t) => t !== focused);
     return (
       <div className="stage stage-focus">
-        <Tile trackRef={focused} big onClick={() => toggle(keyOf(focused))} />
+        <Tile trackRef={focused} big hand={hand(focused)} onClick={() => toggle(keyOf(focused))} />
         <div className="stage-strip">
           {others.map((t) => (
-            <Tile key={keyOf(t)} trackRef={t} small onClick={() => toggle(keyOf(t))} />
+            <Tile key={keyOf(t)} trackRef={t} small hand={hand(t)} onClick={() => toggle(keyOf(t))} />
           ))}
         </div>
       </div>
@@ -103,14 +104,25 @@ export default function VideoStage({ inviteUrl, main }: { inviteUrl: string; mai
   }
 
   return (
-    <div className="stage">
+    <div className={`stage stage-grid count-${Math.min(shown.length + (remoteCams.length === 0 ? 1 : 0), 6)}`}>
       {shown.map((t) => (
-        <Tile key={keyOf(t)} trackRef={t} onClick={() => toggle(keyOf(t))} />
+        <Tile key={keyOf(t)} trackRef={t} hand={hand(t)} onClick={() => toggle(keyOf(t))} />
       ))}
-      {waiting}
+      {remoteCams.length === 0 && (
+        <div className="tile tile-empty">
+          <div>
+            <Mascot pose="wave" size={92} />
+            <strong>Saving a seat for your friend</strong>
+            <p>Send them the link and they&apos;ll pop in right here.</p>
+            <button className="btn btn-lamp" onClick={onInvite}>
+              <LinkIcon size={16} /> Copy invite link
+            </button>
+          </div>
+        </div>
+      )}
       {extra > 0 && (
         <p style={{ gridColumn: "1 / -1", textAlign: "center", color: "var(--ink-dim)" }}>
-          +{extra} more {extra === 1 ? "person is" : "people are"} here — Starlit Desk shows two desks at a time.
+          +{extra} more {extra === 1 ? "person is" : "people are"} here. Starlit Desk shows six desks at a time.
         </p>
       )}
     </div>
@@ -121,33 +133,47 @@ function Tile({
   trackRef,
   big = false,
   small = false,
+  hand = false,
   onClick,
 }: {
   trackRef: TrackReferenceOrPlaceholder;
   big?: boolean;
   small?: boolean;
+  hand?: boolean;
   onClick?: () => void;
 }) {
   const { participant } = trackRef;
+  const prefs = usePrefs();
+  const ref = useRef<HTMLDivElement>(null);
   const screen = isScreen(trackRef);
   const speaking = useIsSpeaking(participant);
   // True when the mic is muted or was never turned on.
   const micMuted = useIsMuted({ participant, source: Track.Source.Microphone });
+  const { quality } = useConnectionQualityIndicator({ participant });
   const name = participant.name || participant.identity;
   const hasVideo = isTrackReference(trackRef) && !trackRef.publication.isMuted;
   const who = participant.isLocal ? "Your" : `${name}'s`;
   const label = screen ? `${who} screen` : `${name}${participant.isLocal ? " (you)" : ""}`;
+  const weak = quality === ConnectionQuality.Poor || quality === ConnectionQuality.Lost;
 
   const cls = [
     "tile",
     screen ? "tile-screen" : "tile-camera",
-    participant.isLocal ? "tile-local" : "",
+    participant.isLocal && prefs.mirror ? "tile-mirror" : "",
     big ? "tile-big" : "",
     small ? "tile-small" : "",
+    !screen && speaking && !micMuted ? "tile-speaking" : "",
   ].join(" ");
+
+  const fullscreen = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (document.fullscreenElement) void document.exitFullscreen();
+    else void ref.current?.requestFullscreen?.();
+  };
 
   return (
     <div
+      ref={ref}
       className={cls}
       {...(onClick
         ? {
@@ -166,70 +192,44 @@ function Tile({
         : {})}
     >
       {hasVideo ? <VideoTrack trackRef={trackRef} /> : <div className="cam-off">{name.slice(0, 1).toUpperCase()}</div>}
-      {!screen && micMuted && (
-        <div className="mute-badge" title={`${participant.isLocal ? "You are" : `${name} is`} muted`}>
-          <MicOffIcon />
-          {!small && <span>Muted</span>}
-        </div>
-      )}
+
+      <div className="tile-badges">
+        {hand && (
+          <span className="hand-badge" title={`${name} raised a hand`}>
+            ✋
+          </span>
+        )}
+        {!screen && micMuted && (
+          <span className="mute-badge" title={`${participant.isLocal ? "You are" : `${name} is`} muted`}>
+            <MicOffIcon size={15} />
+            {!small && <span>Muted</span>}
+          </span>
+        )}
+      </div>
+
       {onClick && (
-      <span className="tile-hint" aria-hidden="true">
-        {big ? <ShrinkIcon /> : <ExpandIcon />}
-      </span>
+        <span className="tile-hint" aria-hidden="true">
+          {big ? <ShrinkIcon size={16} /> : <ExpandIcon size={16} />}
+        </span>
       )}
+      {big && (
+        <button type="button" className="tile-full" onClick={fullscreen} aria-label="Full screen" title="Full screen">
+          <FullscreenIcon size={16} />
+        </button>
+      )}
+
       <div className="tile-name">
-        {screen && <ScreenIcon />}
+        {screen && <ScreenIcon size={14} />}
         {!screen && speaking && !micMuted && <span className="speaking-dot" aria-label="speaking" />}
-        {!screen && micMuted && <MicOffIcon small />}
         {label}
+        {!screen && quality !== ConnectionQuality.Unknown && (
+          <span className={`signal signal-${quality}`} title={weak ? "Weak connection" : "Good connection"} aria-label={weak ? "Weak connection" : "Good connection"}>
+            <i />
+            <i />
+            <i />
+          </span>
+        )}
       </div>
     </div>
-  );
-}
-
-const iconProps = {
-  fill: "none",
-  stroke: "currentColor",
-  strokeWidth: 2.2,
-  strokeLinecap: "round" as const,
-  strokeLinejoin: "round" as const,
-  "aria-hidden": true,
-  viewBox: "0 0 24 24",
-};
-
-function MicOffIcon({ small = false }: { small?: boolean }) {
-  const size = small ? 14 : 16;
-  return (
-    <svg width={size} height={size} {...iconProps}>
-      <path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V5a3 3 0 0 0-5.94-.6" />
-      <path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23" />
-      <line x1="12" y1="19" x2="12" y2="22" />
-      <line x1="2" y1="2" x2="22" y2="22" />
-    </svg>
-  );
-}
-
-function ScreenIcon() {
-  return (
-    <svg width={14} height={14} {...iconProps}>
-      <rect x="2" y="4" width="20" height="13" rx="2" />
-      <path d="M8 21h8M12 17v4" />
-    </svg>
-  );
-}
-
-function ExpandIcon() {
-  return (
-    <svg width={16} height={16} {...iconProps}>
-      <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
-    </svg>
-  );
-}
-
-function ShrinkIcon() {
-  return (
-    <svg width={16} height={16} {...iconProps}>
-      <path d="M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7" />
-    </svg>
   );
 }
