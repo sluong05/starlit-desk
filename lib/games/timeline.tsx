@@ -2,7 +2,9 @@
 
 import { shuffle, type BoardProps, type GameDef, type Rand } from "./core";
 import { TIMELINE_EVENTS, type TimelineEvent } from "./data/content";
-import { Rivals } from "@/components/games/kit";
+import { Rivals, useRise } from "@/components/games/kit";
+import { Hourglass } from "@/components/games/art";
+import { sfx } from "./sfx";
 
 /* Put five events in order, oldest first. Three rounds. */
 
@@ -36,6 +38,8 @@ const totalScore = (s: S, p: P) => p.rounds.reduce((n, ev, r) => n + (s.locked[r
 
 function Board({ puzzle, state, states, act, locked, players, mode }: BoardProps<P, S, A>) {
   const done = state.r >= puzzle.rounds.length;
+  useRise(state.locked.filter(Boolean).length, () => sfx("stamp"));
+  useRise(state.r, () => sfx("whoosh"));
   if (done)
     return (
       <div className="timeline">
@@ -57,6 +61,7 @@ function Board({ puzzle, state, states, act, locked, players, mode }: BoardProps
         <span>
           Round {state.r + 1}/{ROUNDS}
         </span>
+        <Hourglass turn={state.r} />
         <span>Oldest at the top ↑</span>
       </div>
       <ol className="timeline-list">
@@ -64,16 +69,18 @@ function Board({ puzzle, state, states, act, locked, players, mode }: BoardProps
           const e = events[idx];
           const right = isLocked && e.year === sortedYears[pos];
           return (
-            <li key={idx} className={isLocked ? (right ? "right" : "wrong") : ""}>
+            <li key={idx} className={isLocked ? (right ? "right" : "wrong") : ""} style={{ animationDelay: `${pos * 0.09}s` }}>
               <span className="tl-text">{e.text}</span>
               {isLocked ? (
-                <span className="tl-year">{e.year}</span>
+                <span className="tl-year" style={{ animationDelay: `${pos * 0.09}s` }}>
+                  {e.year}
+                </span>
               ) : (
                 <span className="tl-moves">
-                  <button className="btn btn-ghost btn-sm" aria-label="Move up" disabled={locked || pos === 0} onClick={() => act({ type: "move", from: pos, to: pos - 1 })}>
+                  <button className="btn btn-ghost btn-sm" aria-label="Move up" disabled={locked || pos === 0} onClick={() => (sfx("tap"), act({ type: "move", from: pos, to: pos - 1 }))}>
                     ↑
                   </button>
-                  <button className="btn btn-ghost btn-sm" aria-label="Move down" disabled={locked || pos === order.length - 1} onClick={() => act({ type: "move", from: pos, to: pos + 1 })}>
+                  <button className="btn btn-ghost btn-sm" aria-label="Move down" disabled={locked || pos === order.length - 1} onClick={() => (sfx("tap"), act({ type: "move", from: pos, to: pos + 1 }))}>
                     ↓
                   </button>
                 </span>

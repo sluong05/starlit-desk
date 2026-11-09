@@ -1,6 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useRise } from "@/components/games/kit";
+import { Stopwatch } from "@/components/games/art";
+import { sfx } from "./sfx";
 import { fmtTime, norm, pick, sample, type BoardProps, type GameDef, type Rand } from "./core";
 import { SPRINT_CATEGORIES, SPRINT_LETTERS } from "./data/content";
 
@@ -33,13 +36,21 @@ function Board({ puzzle, state, act, locked, players, me, elapsedMs, mode }: Boa
   const [draft, setDraft] = useState<string[]>(() => state.answers[me.id] ?? Array(CATS).fill(""));
   const review = reviewing(state, elapsedMs);
   const iSubmitted = state.submitted.includes(me.id);
+  const leftMs = SECONDS * 1000 - elapsedMs;
+  const secs = Math.ceil(leftMs / 1000);
+  useEffect(() => {
+    if (!review && !locked && secs <= 10 && secs > 0) sfx("tick");
+  }, [secs, review, locked]);
+  useRise(state.submitted.length, () => sfx("good"));
+  useRise(review ? 1 : 0, () => sfx("whoosh"));
+  useRise(Object.keys(state.vetoes).length, () => sfx("pop"));
 
   if (!review) {
     return (
       <div className="sprint">
         <div className="sprint-head">
           <span className="sprint-letter">{puzzle.letter}</span>
-          <span className={`sky-clock ${SECONDS * 1000 - elapsedMs < 15000 ? "low" : ""}`}>{fmtTime(SECONDS * 1000 - elapsedMs)}</span>
+          <Stopwatch frac={leftMs / (SECONDS * 1000)} label={fmtTime(leftMs)} low={leftMs < 15000} />
         </div>
         <p className="game-note">Everything must start with {puzzle.letter}. Unique answers are worth more together.</p>
         <ol className="sprint-list">

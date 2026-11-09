@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { pick, shuffle, type BoardProps, type GameDef, type Rand } from "./core";
-import { Rivals } from "@/components/games/kit";
+import { Rivals, useRise } from "@/components/games/kit";
+import { sfx } from "./sfx";
 
 /* Combine six numbers with + − × ÷ to hit the target. Three rounds. */
 
@@ -59,6 +60,11 @@ function Board({ puzzle, state, states, act, locked, players, mode }: BoardProps
   const [sel, setSel] = useState<number | null>(null);
   const [op, setOp] = useState<Op | null>(null);
   const done = state.r >= puzzle.rounds.length;
+  const moves = state.rounds.reduce((n, x) => n + x.history.length, 0);
+  const exact = state.rounds.filter((x, k) => x.nums.includes(puzzle.rounds[k].target)).length;
+  useRise(moves, () => sfx("pop"));
+  useRise(exact, () => sfx("great"));
+  useRise(state.r, () => sfx("whoosh"));
   if (done)
     return (
       <div className="digits">
@@ -80,12 +86,14 @@ function Board({ puzzle, state, states, act, locked, players, mode }: BoardProps
   const tap = (i: number) => {
     if (locked || hit) return;
     if (sel === null || op === null) {
+      sfx("tap");
       setSel(i === sel ? null : i);
       return;
     }
     if (i === sel) return;
     const [a, b] = [rs.nums[sel], rs.nums[i]];
     if (apply(a, b, op) === null) {
+      sfx("bad");
       setOp(null);
       return;
     }
@@ -100,7 +108,9 @@ function Board({ puzzle, state, states, act, locked, players, mode }: BoardProps
         <span>
           Round {state.r + 1}/3
         </span>
-        <span className="digits-target">{round.target}</span>
+        <span className="digits-target" key={state.r}>
+          {round.target}
+        </span>
         <span>best {rs.best ?? "—"} {"★".repeat(stars(rs.best, round.target))}</span>
       </div>
       <div className="digits-nums">
@@ -112,7 +122,7 @@ function Board({ puzzle, state, states, act, locked, players, mode }: BoardProps
       </div>
       <div className="digits-ops">
         {(["+", "-", "*", "/"] as Op[]).map((o) => (
-          <button key={o} type="button" className={`btn btn-ghost op ${op === o ? "on" : ""}`} disabled={locked || sel === null || hit} onClick={() => setOp(o)}>
+          <button key={o} type="button" className={`btn btn-ghost op ${op === o ? "on" : ""}`} disabled={locked || sel === null || hit} onClick={() => (sfx("chalk"), setOp(o))}>
             {o === "*" ? "×" : o === "/" ? "÷" : o === "-" ? "−" : "+"}
           </button>
         ))}

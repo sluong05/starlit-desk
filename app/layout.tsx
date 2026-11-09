@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "@livekit/components-styles";
 import "./globals.css";
+import "./games-skins.css";
 
 export const metadata: Metadata = {
   title: "Starlit Desk",

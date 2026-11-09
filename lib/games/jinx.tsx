@@ -1,7 +1,9 @@
 "use client";
 
 import { norm, type BoardProps, type GameDef } from "./core";
-import { AnswerBox } from "@/components/games/kit";
+import { AnswerBox, useRise } from "@/components/games/kit";
+import { Minds } from "@/components/games/art";
+import { sfx } from "./sfx";
 
 /*
  * Mind meld: you both say a word at the same time. Then each of you says the
@@ -26,6 +28,8 @@ function Board({ state, act, locked, players, me }: BoardProps<P, S, A>) {
   const finishedRounds = state.rounds.filter(complete);
   const last = finishedRounds[finishedRounds.length - 1];
   const over = won(state) || finishedRounds.length >= MAX_ROUNDS;
+  useRise(finishedRounds.length, () => sfx(won(state) ? "great" : "zap"));
+  useRise(Object.keys(current).length, () => sfx("blip"));
 
   if (!others.length)
     return (
@@ -36,6 +40,7 @@ function Board({ state, act, locked, players, me }: BoardProps<P, S, A>) {
 
   return (
     <div className="jinx">
+      <Minds left="You" right={others[0].name} state={won(state) ? "match" : Object.keys(current).length > 0 ? "thinking" : "idle"} />
       <p className="game-note">
         {finishedRounds.length === 0
           ? "Round 1: both of you type ANY word. Don't plan it!"

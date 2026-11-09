@@ -1,7 +1,8 @@
 "use client";
 
 import { pick, shuffle, type BoardProps, type GameDef, type Rand } from "./core";
-import { AnswerBox, Flash, Rivals, Who, useFlash } from "@/components/games/kit";
+import { AnswerBox, Flash, Rivals, Who, useFlash, useRise } from "@/components/games/kit";
+import { sfx } from "./sfx";
 
 /* Unscramble five words, shortest to longest. */
 
@@ -31,6 +32,8 @@ const allSolved = (s: S) => s.solved.every(Boolean);
 
 function Board({ puzzle, state, states, act, locked, players, mode }: BoardProps<P, S, A>) {
   const [msg, flash] = useFlash();
+  useRise(state.solved.filter(Boolean).length, () => sfx("good"));
+  useRise(state.hints.reduce((a, b) => a + b, 0), () => sfx("pop"));
   return (
     <div className="scramble">
       <p className="game-note">Unscramble all five. Type any answer; it finds its row.</p>
@@ -42,7 +45,7 @@ function Board({ puzzle, state, states, act, locked, players, mode }: BoardProps
             <li key={i} className={solved ? "solved" : ""}>
               <span className="tiles">
                 {(solved ? solved.w : it.scrambled).split("").map((c, j) => (
-                  <span key={j} className="tile-letter">
+                  <span key={j} className="tile-letter" style={{ animationDelay: `${j * 0.07}s` }}>
                     {c}
                   </span>
                 ))}

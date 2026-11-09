@@ -1,0 +1,1418 @@
+/* =====================================================================
+   Game skins: every game is its own little world with its own palette,
+   materials and motion. Each `.g-<id>` block re-points the shared color
+   variables, so the common controls (buttons, inputs) adopt the skin.
+   ===================================================================== */
+
+/* ---------- menu cards ---------- */
+
+.game-card {
+  padding: 0;
+  overflow: hidden;
+  gap: 0;
+}
+
+.gc-cover {
+  display: block;
+  width: 100%;
+  aspect-ratio: 200 / 90;
+  overflow: hidden;
+}
+
+.cover-art {
+  display: block;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.35s ease;
+}
+
+.game-card:hover .cover-art {
+  transform: scale(1.07) rotate(-1deg);
+}
+
+.gc-name {
+  padding: 0.6rem 0.8rem 0;
+}
+
+.gc-tag {
+  padding: 0.15rem 0.8rem 0;
+}
+
+.gc-meta {
+  padding: 0.3rem 0.8rem 0.75rem;
+}
+
+/* ---------- shared skin frame ---------- */
+
+.play.skin {
+  position: relative;
+  isolation: isolate;
+  max-width: 680px;
+  padding: 1.1rem 1.1rem 1.4rem;
+  border-radius: 22px;
+  overflow: hidden;
+  color: var(--ink);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
+  animation: skin-in 0.45s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+}
+
+@keyframes skin-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(10px);
+  }
+}
+
+.confetti {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 5;
+}
+
+.confetti i {
+  position: absolute;
+  top: -14px;
+  opacity: 0;
+  animation: confetti-fall 2s cubic-bezier(0.2, 0.6, 0.4, 1) forwards;
+}
+
+@keyframes confetti-fall {
+  0% {
+    opacity: 1;
+    transform: translate(0, 0) rotate(0);
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--dx), 620px) rotate(var(--rot));
+  }
+}
+
+.results.celebrate .results-line {
+  animation: pop-in 0.5s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+}
+
+@keyframes hop {
+  0%,
+  100% {
+    transform: none;
+  }
+  40% {
+    transform: translateY(-12px);
+  }
+}
+
+@keyframes twinkle {
+  0%,
+  100% {
+    opacity: 0.5;
+    transform: scale(0.85);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.25);
+  }
+}
+
+@keyframes wobble {
+  0%,
+  100% {
+    transform: rotate(-3deg);
+  }
+  50% {
+    transform: rotate(3deg) translateY(-2px);
+  }
+}
+
+@keyframes stamp-in {
+  0% {
+    opacity: 0;
+    transform: scale(2.4) rotate(-18deg);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(0.92) rotate(-6deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(-6deg);
+  }
+}
+
+@keyframes drop-in {
+  from {
+    opacity: 0;
+    transform: translateY(-14px);
+  }
+}
+
+/* shared stopwatch ring */
+.stopwatch .sw-bg {
+  fill: rgba(0, 0, 0, 0.18);
+  stroke: var(--track);
+  stroke-width: 5;
+}
+
+.stopwatch .sw-ring {
+  fill: none;
+  stroke: var(--lamp);
+  stroke-width: 5;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.3s linear;
+}
+
+.stopwatch .sw-knob {
+  fill: var(--lamp);
+}
+
+.stopwatch .sw-text {
+  fill: var(--ink);
+  font-weight: 800;
+  font-size: 15px;
+}
+
+.stopwatch.low .sw-ring,
+.stopwatch.low .sw-knob {
+  stroke: #ff6b81;
+  fill: #ff6b81;
+}
+
+.stopwatch.low .sw-ring {
+  fill: none;
+}
+
+.stopwatch.low {
+  animation: wobble 0.5s ease-in-out infinite;
+}
+
+/* =====================================================================
+   Moonword — moonlit tiles
+   ===================================================================== */
+
+.g-moonword {
+  --ink: #eef0ff;
+  --ink-dim: #a9aede;
+  --lamp: #ffd98a;
+  --lamp-rgb: 255, 217, 138;
+  --lamp-soft: rgba(255, 217, 138, 0.2);
+  --on-lamp: #2b1d05;
+  --ghost: rgba(255, 255, 255, 0.06);
+  --ghost-hover: rgba(255, 255, 255, 0.13);
+  --glass-edge: rgba(170, 180, 255, 0.3);
+  --field: rgba(6, 9, 30, 0.6);
+  --track: rgba(255, 255, 255, 0.1);
+  --soft-rgb: 170, 180, 255;
+  color-scheme: dark;
+  background:
+    radial-gradient(1.5px 1.5px at 8% 12%, #fff 50%, transparent 52%),
+    radial-gradient(1px 1px at 22% 68%, #fff 50%, transparent 52%),
+    radial-gradient(1.5px 1.5px at 91% 22%, #fff 50%, transparent 52%),
+    radial-gradient(1px 1px at 78% 80%, #fff 50%, transparent 52%),
+    radial-gradient(1px 1px at 64% 8%, #fff 50%, transparent 52%),
+    radial-gradient(400px 260px at 50% -10%, #343a8a 0%, transparent 70%),
+    linear-gradient(170deg, #1a1f52, #0b0e2a);
+}
+
+.mw-moon {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  margin-bottom: 0.6rem;
+}
+
+.mw-moon p {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--ink-dim);
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.mw-moon .key-hit,
+.mw-moon .key-near {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 5px;
+}
+
+.mw-moon .key-hit {
+  background: #ffd277;
+  box-shadow: 0 0 8px rgba(255, 217, 138, 0.7);
+}
+
+.mw-moon .key-near {
+  box-shadow: inset 0 0 0 2px #9db4ff;
+  margin-left: 0.5rem;
+}
+
+.moon-phase.glow {
+  filter: drop-shadow(0 0 14px rgba(255, 226, 168, 0.9));
+  animation: hop 0.7s ease 0.9s both;
+}
+
+.g-moonword .mw-cell {
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.g-moonword .mw-cell.filled {
+  animation: pop-in 0.12s ease;
+  border-color: #8f96d8;
+}
+
+.g-moonword .m-hit {
+  background: radial-gradient(circle at 35% 30%, #fff6d8, #ffd277 60%, #e9a94a) !important;
+  border-color: #ffe2a8 !important;
+  color: #3b2a05 !important;
+  box-shadow: 0 0 18px rgba(255, 217, 138, 0.55);
+}
+
+.g-moonword .m-near {
+  background: rgba(157, 180, 255, 0.12) !important;
+  border-color: #9db4ff !important;
+  color: #dbe6ff !important;
+  box-shadow: inset 0 0 0 2px #9db4ff, 0 0 12px rgba(157, 180, 255, 0.35);
+}
+
+.g-moonword .m-miss {
+  background: rgba(255, 255, 255, 0.07) !important;
+  color: #7d83b5 !important;
+}
+
+.g-moonword .mw-row.won .mw-cell {
+  animation: flip 0.45s ease both, hop 0.5s ease both;
+}
+
+.g-moonword .mw-key {
+  border-radius: 10px;
+  transition: transform 0.08s ease, background 0.3s ease 0.5s;
+}
+
+.g-moonword .mw-key:active {
+  transform: scale(0.9);
+}
+
+/* =====================================================================
+   Constellations — stars on a night sky
+   ===================================================================== */
+
+.g-constellations {
+  --ink: #eaf0ff;
+  --ink-dim: #9fb0dc;
+  --lamp: #9fc0ff;
+  --lamp-rgb: 159, 192, 255;
+  --lamp-soft: rgba(159, 192, 255, 0.22);
+  --on-lamp: #0a1030;
+  --ghost: rgba(255, 255, 255, 0.05);
+  --ghost-hover: rgba(255, 255, 255, 0.11);
+  --glass-edge: rgba(159, 192, 255, 0.3);
+  --field: rgba(4, 8, 28, 0.6);
+  --track: rgba(255, 255, 255, 0.1);
+  --soft-rgb: 159, 192, 255;
+  color-scheme: dark;
+  background:
+    radial-gradient(1.5px 1.5px at 6% 20%, #fff 50%, transparent 52%),
+    radial-gradient(1px 1px at 16% 84%, #cfe0ff 50%, transparent 52%),
+    radial-gradient(1.5px 1.5px at 95% 12%, #fff 50%, transparent 52%),
+    radial-gradient(1px 1px at 86% 92%, #cfe0ff 50%, transparent 52%),
+    radial-gradient(1px 1px at 48% 4%, #fff 50%, transparent 52%),
+    radial-gradient(1px 1px at 34% 96%, #fff 50%, transparent 52%),
+    radial-gradient(500px 300px at 85% 0%, #1d2a6e 0%, transparent 70%),
+    linear-gradient(180deg, #0c1438, #060a22);
+}
+
+.g-constellations .cons-star {
+  position: relative;
+  min-height: 64px;
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid rgba(159, 192, 255, 0.22);
+  border-radius: 14px;
+  transition: transform 0.12s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.g-constellations .cons-star::before {
+  content: "✦";
+  display: block;
+  font-size: 0.7rem;
+  line-height: 1;
+  margin-bottom: 0.2rem;
+  color: #9fc0ff;
+  opacity: 0.55;
+}
+
+.g-constellations .cons-star:hover {
+  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.09);
+}
+
+.g-constellations .cons-star.sel {
+  background: rgba(159, 192, 255, 0.24);
+  color: #fff;
+  box-shadow: 0 0 0 2px #9fc0ff, 0 0 20px rgba(159, 192, 255, 0.55);
+  transform: translateY(-3px) scale(1.03);
+}
+
+.g-constellations .cons-star.sel::before {
+  color: #fff;
+  opacity: 1;
+  animation: twinkle 0.9s ease-in-out infinite;
+}
+
+.cons-group {
+  position: relative;
+  display: grid;
+  justify-items: center;
+}
+
+.con-figure {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  translate: 0 -50%;
+}
+
+.con-figure polyline {
+  fill: none;
+  stroke: #1d1630;
+  stroke-width: 1.6;
+  stroke-linejoin: round;
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  animation: draw-line 0.9s ease 0.15s forwards;
+}
+
+.con-figure circle {
+  transform-box: fill-box;
+  transform-origin: center;
+  fill: #1d1630;
+  animation: pop-in 0.3s ease both;
+}
+
+@keyframes draw-line {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.cons-group .who {
+  background: rgba(29, 22, 48, 0.16);
+  color: #1d1630;
+}
+
+.cons-lives.hit {
+  display: inline-block;
+  animation: shake 0.4s ease;
+}
+
+/* =====================================================================
+   Deep Sky — a rocket voyage
+   ===================================================================== */
+
+.g-deepsky {
+  --ink: #f1ecff;
+  --ink-dim: #b3a6dc;
+  --lamp: #7ef0d6;
+  --lamp-rgb: 126, 240, 214;
+  --lamp-soft: rgba(126, 240, 214, 0.2);
+  --on-lamp: #06231d;
+  --ghost: rgba(255, 255, 255, 0.06);
+  --ghost-hover: rgba(255, 255, 255, 0.12);
+  --glass-edge: rgba(201, 166, 240, 0.32);
+  --field: rgba(10, 6, 34, 0.6);
+  --track: rgba(255, 255, 255, 0.12);
+  --soft-rgb: 201, 166, 240;
+  color-scheme: dark;
+  background:
+    radial-gradient(1.5px 1.5px at 10% 30%, #fff 50%, transparent 52%),
+    radial-gradient(1px 1px at 90% 70%, #fff 50%, transparent 52%),
+    radial-gradient(1px 1px at 70% 14%, #fff 50%, transparent 52%),
+    radial-gradient(360px 220px at 100% 0%, rgba(126, 240, 214, 0.16) 0%, transparent 70%),
+    radial-gradient(420px 260px at 0% 100%, rgba(242, 166, 90, 0.16) 0%, transparent 70%),
+    linear-gradient(160deg, #34186a, #0c1034);
+}
+
+.g-deepsky .sky-head {
+  align-items: center;
+}
+
+.voyage {
+  position: relative;
+  height: 34px;
+  margin: 0.4rem 22px 0.6rem;
+}
+
+.voyage-track {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  border-top: 2px dashed rgba(255, 255, 255, 0.25);
+}
+
+.voyage .stop,
+.voyage .rocket {
+  position: absolute;
+  top: 50%;
+  translate: -50% -50%;
+  display: grid;
+}
+
+.voyage .galaxy {
+  animation: spin 14s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.voyage .rocket {
+  transition: left 0.9s cubic-bezier(0.3, 0.1, 0.2, 1);
+  filter: drop-shadow(0 0 8px rgba(126, 240, 214, 0.7));
+  z-index: 1;
+}
+
+.voyage .flame {
+  transform-origin: 10px 12px;
+  animation: flame 0.18s ease-in-out infinite alternate;
+}
+
+@keyframes flame {
+  to {
+    transform: scaleX(0.55);
+  }
+}
+
+.g-deepsky .sky-q {
+  animation: drop-in 0.4s ease;
+}
+
+.g-deepsky .sky-table tr {
+  animation: drop-in 0.4s ease both;
+}
+
+.g-deepsky .sky-table tr:nth-child(2) { animation-delay: 0.08s; }
+.g-deepsky .sky-table tr:nth-child(3) { animation-delay: 0.16s; }
+.g-deepsky .sky-table tr:nth-child(4) { animation-delay: 0.24s; }
+.g-deepsky .sky-table tr:nth-child(5) { animation-delay: 0.32s; }
+
+/* =====================================================================
+   Hive — honey and honeycomb
+   ===================================================================== */
+
+.g-hive {
+  --ink: #fff3d6;
+  --ink-dim: #d9bd88;
+  --lamp: #ffc233;
+  --lamp-rgb: 255, 194, 51;
+  --lamp-soft: rgba(255, 194, 51, 0.22);
+  --on-lamp: #2b1a06;
+  --ghost: rgba(255, 220, 150, 0.08);
+  --ghost-hover: rgba(255, 220, 150, 0.16);
+  --glass-edge: rgba(255, 210, 120, 0.3);
+  --field: rgba(20, 12, 2, 0.55);
+  --track: rgba(255, 220, 150, 0.14);
+  --soft-rgb: 255, 210, 120;
+  color-scheme: dark;
+  background:
+    radial-gradient(300px 200px at 50% 45%, rgba(255, 194, 51, 0.16) 0%, transparent 70%),
+    linear-gradient(170deg, #3d2609, #241503);
+}
+
+.g-hive .hive-status {
+  max-width: 440px;
+}
+
+.hive-rank {
+  display: inline-block;
+  animation: pop-in 0.4s cubic-bezier(0.2, 1.5, 0.4, 1);
+  color: var(--lamp);
+}
+
+.g-hive .hive-comb {
+  filter: drop-shadow(0 8px 10px rgba(0, 0, 0, 0.4));
+}
+
+.g-hive .hex {
+  background: linear-gradient(165deg, #7a521a, #4d310c);
+  color: #ffe9b0;
+  transition: transform 0.1s ease, filter 0.2s ease;
+}
+
+.g-hive .hex:hover {
+  filter: brightness(1.2);
+}
+
+.g-hive .hex:active {
+  transform: scale(0.88);
+}
+
+.g-hive .hex-center {
+  background: linear-gradient(165deg, #ffd34d, #ff9d2e);
+  color: #2b1a06;
+}
+
+.bee-fly {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 2;
+  pointer-events: none;
+  animation: bee-path 1.5s ease-in-out forwards;
+}
+
+.bee .wing {
+  transform-origin: 2px -4px;
+  animation: flap 0.07s linear infinite alternate;
+}
+
+@keyframes flap {
+  to {
+    transform: scaleY(0.4);
+  }
+}
+
+@keyframes bee-path {
+  0% {
+    opacity: 0;
+    transform: translate(-50px, 180px) rotate(-20deg);
+  }
+  15% {
+    opacity: 1;
+  }
+  35% {
+    transform: translate(60px, 40px) rotate(10deg);
+  }
+  60% {
+    transform: translate(150px, 110px) rotate(-12deg);
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(280px, -20px) rotate(12deg);
+  }
+}
+
+.g-hive .hive-found {
+  background: rgba(0, 0, 0, 0.18);
+}
+
+.g-hive .hive-found li {
+  animation: drop-in 0.3s ease;
+}
+
+/* =====================================================================
+   Star Ladder — wooden rungs up to a star
+   ===================================================================== */
+
+.g-ladder {
+  --ink: #eafaf6;
+  --ink-dim: #a5cfc8;
+  --lamp: #ffd36e;
+  --lamp-rgb: 255, 211, 110;
+  --lamp-soft: rgba(255, 211, 110, 0.22);
+  --on-lamp: #33230a;
+  --ghost: rgba(255, 255, 255, 0.07);
+  --ghost-hover: rgba(255, 255, 255, 0.13);
+  --glass-edge: rgba(143, 224, 200, 0.3);
+  --field: rgba(4, 18, 24, 0.55);
+  --track: rgba(255, 255, 255, 0.12);
+  --soft-rgb: 143, 224, 200;
+  color-scheme: dark;
+  background:
+    radial-gradient(1.5px 1.5px at 12% 10%, #fff 50%, transparent 52%),
+    radial-gradient(1px 1px at 84% 16%, #fff 50%, transparent 52%),
+    radial-gradient(1px 1px at 70% 6%, #fff 50%, transparent 52%),
+    linear-gradient(180deg, #0f2740 0%, #175056 70%, #1d6a5c 100%);
+}
+
+.g-ladder .ladder-rungs {
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: stretch;
+  gap: 12px;
+  position: relative;
+  width: max-content;
+  margin: 2.6rem auto 0.9rem;
+  padding: 12px 30px;
+}
+
+.g-ladder .ladder-rungs::before,
+.g-ladder .ladder-rungs::after {
+  content: "";
+  position: absolute;
+  top: -8px;
+  bottom: -8px;
+  width: 10px;
+  border-radius: 5px;
+  background: linear-gradient(90deg, #d9a468, #9a6a35);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.35);
+}
+
+.g-ladder .ladder-rungs::before {
+  left: 8px;
+}
+
+.g-ladder .ladder-rungs::after {
+  right: 8px;
+}
+
+.g-ladder .ladder-rungs li {
+  position: relative;
+  justify-content: center;
+  gap: 4px;
+  padding: 5px 12px;
+  margin: 0 -16px;
+  border-radius: 7px;
+  background: linear-gradient(180deg, #e2b077, #b9824a);
+  box-shadow: 0 4px 0 #6b4420, 0 8px 10px rgba(0, 0, 0, 0.3);
+  animation: drop-in 0.3s cubic-bezier(0.2, 1.4, 0.4, 1);
+  z-index: 1;
+}
+
+.g-ladder .ladder-rungs li span:not(.who) {
+  width: 36px;
+  height: 36px;
+  background: rgba(255, 255, 255, 0.28);
+  color: #3a2206;
+  font-size: 1.05rem;
+}
+
+.g-ladder .ladder-rungs li span.changed {
+  background: #fff6dc;
+  box-shadow: 0 0 10px rgba(255, 246, 220, 0.8);
+}
+
+.g-ladder .ladder-rungs li.start span:not(.who),
+.g-ladder .ladder-rungs li.end span:not(.who) {
+  background: #ffd36e;
+  color: #33230a;
+}
+
+.g-ladder .ladder-rungs li.ghost {
+  background: transparent;
+  box-shadow: inset 0 0 0 2px rgba(255, 211, 110, 0.55);
+  animation: none;
+}
+
+.g-ladder .ladder-rungs li.ghost span:not(.who) {
+  opacity: 0.55;
+}
+
+.g-ladder .ladder-rungs li.end::before {
+  content: "★";
+  position: absolute;
+  left: 50%;
+  top: -40px;
+  translate: -50% 0;
+  font-size: 1.8rem;
+  line-height: 1;
+  color: #ffd36e;
+  text-shadow: 0 0 16px rgba(255, 211, 110, 0.9);
+  animation: twinkle 1.6s ease-in-out infinite;
+}
+
+.g-ladder .ladder-rungs .who {
+  position: absolute;
+  left: calc(100% + 16px);
+  white-space: nowrap;
+}
+
+/* =====================================================================
+   Scramble — tumbling letter blocks
+   ===================================================================== */
+
+.g-scramble {
+  --ink: #3a2a00;
+  --ink-dim: #7a6220;
+  --lamp: #e2542d;
+  --lamp-rgb: 226, 84, 45;
+  --lamp-soft: rgba(226, 84, 45, 0.22);
+  --on-lamp: #ffffff;
+  --ghost: rgba(58, 42, 0, 0.07);
+  --ghost-hover: rgba(58, 42, 0, 0.13);
+  --glass-edge: rgba(58, 42, 0, 0.25);
+  --field: rgba(255, 255, 255, 0.75);
+  --track: rgba(58, 42, 0, 0.12);
+  --soft-rgb: 58, 42, 0;
+  color-scheme: light;
+  background:
+    radial-gradient(240px 240px at 100% 0%, #ffe69a 0%, transparent 70%),
+    radial-gradient(200px 200px at 0% 100%, #ffbf3a 0%, transparent 70%),
+    #ffd45e;
+}
+
+.g-scramble .scramble-rows {
+  gap: 12px;
+}
+
+.g-scramble .scramble-rows .tile-letter {
+  width: 40px;
+  height: 40px;
+  border-radius: 9px;
+  background: #fffdf5;
+  color: #3a2a00;
+  font-size: 1.1rem;
+  box-shadow: 0 4px 0 #c9992a, 0 6px 8px rgba(120, 80, 0, 0.25);
+}
+
+.g-scramble .scramble-rows li:not(.solved) .tile-letter {
+  animation: wobble 2.2s ease-in-out infinite;
+}
+
+.g-scramble .scramble-rows li:not(.solved) .tile-letter:nth-child(even) {
+  animation-direction: reverse;
+}
+
+.g-scramble .scramble-rows li.solved .tile-letter {
+  background: #3aa5a0;
+  color: #fff;
+  box-shadow: 0 4px 0 #23706c;
+  animation: hop 0.45s ease both;
+}
+
+.g-scramble .who {
+  background: rgba(58, 42, 0, 0.12);
+  color: #3a2a00;
+}
+
+.g-scramble .who-me {
+  background: #e2542d;
+  color: #fff;
+}
+
+/* =====================================================================
+   Emoji Cinema — curtains, marquee and a silver screen
+   ===================================================================== */
+
+.g-emoji {
+  --ink: #ffeede;
+  --ink-dim: #d1a9a0;
+  --lamp: #ffcf5a;
+  --lamp-rgb: 255, 207, 90;
+  --lamp-soft: rgba(255, 207, 90, 0.22);
+  --on-lamp: #2a1500;
+  --ghost: rgba(255, 255, 255, 0.07);
+  --ghost-hover: rgba(255, 255, 255, 0.13);
+  --glass-edge: rgba(255, 207, 90, 0.3);
+  --field: rgba(20, 4, 8, 0.6);
+  --track: rgba(255, 255, 255, 0.12);
+  --soft-rgb: 255, 160, 160;
+  color-scheme: dark;
+  background: radial-gradient(500px 300px at 50% 0%, #4a121c 0%, transparent 70%), linear-gradient(180deg, #2a0c12, #14060a);
+}
+
+.cinema {
+  position: relative;
+  margin: 0.4rem 0 0.6rem;
+  padding: 22px 56px 14px;
+  border-radius: 14px;
+  background: #0d0306;
+  overflow: hidden;
+}
+
+.cinema .marquee {
+  position: absolute;
+  top: 6px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-evenly;
+  z-index: 3;
+}
+
+.cinema .marquee i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ffcf5a;
+  box-shadow: 0 0 10px #ffcf5a;
+  animation: bulb 0.9s ease-in-out infinite alternate;
+}
+
+@keyframes bulb {
+  from {
+    opacity: 0.35;
+  }
+}
+
+.cinema .curtain {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 54px;
+  z-index: 2;
+  background: repeating-linear-gradient(90deg, #b3202e 0 9px, #7d1420 9px 13px, #c8303d 13px 20px);
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.6);
+}
+
+.cinema .curtain-l {
+  left: 0;
+  border-bottom-right-radius: 60% 18px;
+  animation: curtain-l 0.7s ease both;
+}
+
+.cinema .curtain-r {
+  right: 0;
+  border-bottom-left-radius: 60% 18px;
+  animation: curtain-r 0.7s ease both;
+}
+
+@keyframes curtain-l {
+  from {
+    width: 52%;
+  }
+}
+
+@keyframes curtain-r {
+  from {
+    width: 52%;
+  }
+}
+
+.cinema .screen {
+  display: grid;
+  place-items: center;
+  min-height: 120px;
+  border-radius: 6px;
+  background: radial-gradient(circle at 50% 40%, #fffaf0, #eadfc8);
+  box-shadow: 0 0 40px rgba(255, 245, 220, 0.35);
+}
+
+.g-emoji .emoji-clue {
+  margin: 0;
+  animation: pop-in 0.45s cubic-bezier(0.2, 1.4, 0.4, 1) 0.25s both;
+}
+
+.g-emoji .emoji-progress span {
+  border-radius: 4px;
+  background: #0d0306;
+  border-left: 3px dotted rgba(255, 255, 255, 0.35);
+  border-right: 3px dotted rgba(255, 255, 255, 0.35);
+}
+
+.g-emoji .emoji-progress .cur {
+  background: #ffcf5a;
+  color: #2a1500;
+}
+
+.g-emoji .emoji-progress .ok {
+  animation: pop-in 0.4s ease;
+}
+
+.g-emoji .emoji-hints span {
+  animation: drop-in 0.3s ease;
+}
+
+/* =====================================================================
+   Timeline — parchment and ink
+   ===================================================================== */
+
+.g-timeline {
+  --ink: #3b2a17;
+  --ink-dim: #7d6547;
+  --lamp: #a5532a;
+  --lamp-rgb: 165, 83, 42;
+  --lamp-soft: rgba(165, 83, 42, 0.2);
+  --on-lamp: #fff6e6;
+  --ghost: rgba(59, 42, 23, 0.07);
+  --ghost-hover: rgba(59, 42, 23, 0.12);
+  --glass-edge: rgba(59, 42, 23, 0.3);
+  --field: rgba(255, 255, 255, 0.6);
+  --track: rgba(59, 42, 23, 0.14);
+  --soft-rgb: 59, 42, 23;
+  color-scheme: light;
+  background:
+    radial-gradient(300px 200px at 0% 0%, rgba(165, 83, 42, 0.14) 0%, transparent 70%),
+    radial-gradient(300px 200px at 100% 100%, rgba(165, 83, 42, 0.16) 0%, transparent 70%),
+    #f3e6cc;
+}
+
+.g-timeline .timeline-head {
+  align-items: center;
+  color: var(--ink-dim);
+}
+
+.hourglass {
+  color: #7a4b2a;
+  animation: hourglass-turn 0.8s ease;
+}
+
+@keyframes hourglass-turn {
+  from {
+    transform: rotate(180deg);
+  }
+}
+
+.g-timeline .timeline-list {
+  position: relative;
+  padding-left: 34px;
+  gap: 9px;
+}
+
+.g-timeline .timeline-list::before {
+  content: "";
+  position: absolute;
+  left: 13px;
+  top: 6px;
+  bottom: 6px;
+  border-left: 3px solid #7a4b2a;
+  border-radius: 2px;
+  opacity: 0.6;
+}
+
+.g-timeline .timeline-list li {
+  position: relative;
+  background: #fffaf0;
+  border: 1px solid rgba(59, 42, 23, 0.2);
+  box-shadow: 0 3px 0 rgba(59, 42, 23, 0.14);
+  transition: transform 0.2s ease;
+}
+
+.g-timeline .timeline-list li::before {
+  position: absolute;
+  left: -32px;
+  top: 50%;
+  translate: 0 -50%;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #f3e6cc;
+  border: 3px solid #7a4b2a;
+  color: #7a4b2a;
+  font-size: 0.72rem;
+}
+
+.g-timeline .timeline-list li.right {
+  background: #e3efd6;
+  border-color: #5e7d5a;
+  animation: hop 0.45s ease both;
+}
+
+.g-timeline .timeline-list li.right::before {
+  background: #5e7d5a;
+  border-color: #5e7d5a;
+  color: #fff;
+}
+
+.g-timeline .timeline-list li.wrong {
+  background: #f6ddd3;
+  border-color: #b5532f;
+}
+
+.g-timeline .tl-year {
+  padding: 0.1rem 0.5rem;
+  border: 2px solid currentColor;
+  border-radius: 6px;
+  color: #a5532a;
+  font-weight: 800;
+  animation: stamp-in 0.4s ease both;
+}
+
+.g-timeline li.right .tl-year {
+  color: #46663f;
+}
+
+/* =====================================================================
+   Alphabet Sprint — race bib and stopwatch on a track
+   ===================================================================== */
+
+.g-sprint {
+  --ink: #f3f6ff;
+  --ink-dim: #a8b5d6;
+  --lamp: #ff8a4c;
+  --lamp-rgb: 255, 138, 76;
+  --lamp-soft: rgba(255, 138, 76, 0.24);
+  --on-lamp: #2a1005;
+  --ghost: rgba(255, 255, 255, 0.07);
+  --ghost-hover: rgba(255, 255, 255, 0.13);
+  --glass-edge: rgba(255, 255, 255, 0.24);
+  --field: rgba(6, 12, 26, 0.6);
+  --track: rgba(255, 255, 255, 0.14);
+  --soft-rgb: 160, 190, 255;
+  color-scheme: dark;
+  background:
+    repeating-linear-gradient(170deg, transparent 0 46px, rgba(255, 255, 255, 0.07) 46px 48px),
+    linear-gradient(170deg, #1c2a48, #101a30);
+}
+
+.g-sprint .sprint-head {
+  margin-bottom: 0.3rem;
+}
+
+.g-sprint .sprint-letter {
+  position: relative;
+  width: 74px;
+  height: 66px;
+  border-radius: 8px;
+  background: #fff;
+  color: #162238;
+  font-size: 2.6rem;
+  font-weight: 600;
+  box-shadow: 0 5px 0 rgba(0, 0, 0, 0.3);
+  rotate: -4deg;
+  animation: pop-in 0.5s cubic-bezier(0.2, 1.5, 0.4, 1);
+}
+
+.g-sprint .sprint-letter::before,
+.g-sprint .sprint-letter::after {
+  content: "";
+  position: absolute;
+  top: 6px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #ff8a4c;
+}
+
+.g-sprint .sprint-letter::before {
+  left: 6px;
+}
+
+.g-sprint .sprint-letter::after {
+  right: 6px;
+}
+
+.g-sprint .sprint-list li {
+  animation: drop-in 0.35s ease both;
+}
+
+.g-sprint .sprint-list li:nth-child(2) { animation-delay: 0.05s; }
+.g-sprint .sprint-list li:nth-child(3) { animation-delay: 0.1s; }
+.g-sprint .sprint-list li:nth-child(4) { animation-delay: 0.15s; }
+.g-sprint .sprint-list li:nth-child(5) { animation-delay: 0.2s; }
+.g-sprint .sprint-list li:nth-child(6) { animation-delay: 0.25s; }
+
+.g-sprint .sprint-table tr {
+  animation: drop-in 0.35s ease both;
+}
+
+/* =====================================================================
+   Jinx — two minds and a spark
+   ===================================================================== */
+
+.g-jinx {
+  --ink: #f6f0ff;
+  --ink-dim: #c2b0ee;
+  --lamp: #c8ff5a;
+  --lamp-rgb: 200, 255, 90;
+  --lamp-soft: rgba(200, 255, 90, 0.22);
+  --on-lamp: #1c2a00;
+  --ghost: rgba(255, 255, 255, 0.08);
+  --ghost-hover: rgba(255, 255, 255, 0.14);
+  --glass-edge: rgba(255, 143, 208, 0.35);
+  --field: rgba(16, 6, 46, 0.6);
+  --track: rgba(255, 255, 255, 0.14);
+  --soft-rgb: 255, 143, 208;
+  color-scheme: dark;
+  background:
+    radial-gradient(260px 200px at 0% 0%, rgba(200, 255, 90, 0.18) 0%, transparent 70%),
+    radial-gradient(260px 200px at 100% 0%, rgba(255, 143, 208, 0.2) 0%, transparent 70%),
+    linear-gradient(180deg, #33187a, #1c0c4a);
+}
+
+.minds {
+  display: grid;
+  justify-items: center;
+}
+
+.minds-names {
+  display: flex;
+  justify-content: space-between;
+  width: 220px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--ink-dim);
+}
+
+.minds-names span {
+  width: 68px;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.minds .spark {
+  opacity: 0.25;
+  transform-origin: 110px 35px;
+}
+
+.minds .waves path {
+  transform-box: fill-box;
+  transform-origin: center;
+  fill: none;
+  stroke: #fff;
+  stroke-width: 2;
+  stroke-linecap: round;
+  opacity: 0;
+}
+
+.minds-thinking .waves path {
+  animation: twinkle 0.9s ease-in-out infinite;
+}
+
+.minds-match .spark {
+  opacity: 1;
+  animation: spark 0.5s ease-in-out infinite alternate;
+  filter: drop-shadow(0 0 10px #fff36b);
+}
+
+@keyframes spark {
+  to {
+    transform: scale(1.3) rotate(6deg);
+  }
+}
+
+.g-jinx .jinx-rounds li {
+  animation: drop-in 0.35s cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+
+.g-jinx .jinx-word {
+  position: relative;
+  border-radius: 16px 16px 16px 4px;
+  background: #c8ff5a;
+  color: #1c2a00;
+}
+
+.g-jinx .jinx-word small {
+  color: #3d5a00;
+}
+
+.g-jinx .jinx-word:last-child {
+  border-radius: 16px 16px 4px 16px;
+  background: #ff8fd0;
+  color: #4a0b33;
+}
+
+.g-jinx .jinx-word:last-child small {
+  color: #7a1a57;
+}
+
+.g-jinx .jinx-rounds li.match .jinx-word {
+  background: #fff36b;
+  color: #2e1670;
+  animation: hop 0.5s ease 2;
+  box-shadow: 0 0 22px rgba(255, 243, 107, 0.8);
+}
+
+.g-jinx .jinx-bridge {
+  animation: pop-in 0.4s ease;
+}
+
+/* =====================================================================
+   Star Math — chalk on a blackboard
+   ===================================================================== */
+
+.g-digits {
+  --ink: #f4f1e4;
+  --ink-dim: #b9cfc2;
+  --lamp: #ffe27a;
+  --lamp-rgb: 255, 226, 122;
+  --lamp-soft: rgba(255, 226, 122, 0.2);
+  --on-lamp: #2c2500;
+  --ghost: rgba(255, 255, 255, 0.06);
+  --ghost-hover: rgba(255, 255, 255, 0.12);
+  --glass-edge: rgba(244, 241, 228, 0.4);
+  --field: rgba(8, 24, 18, 0.5);
+  --track: rgba(255, 255, 255, 0.14);
+  --soft-rgb: 244, 241, 228;
+  color-scheme: dark;
+  border: 10px solid #8a5a2b;
+  box-shadow: inset 0 0 0 2px #5e3b18, inset 0 0 60px rgba(0, 0, 0, 0.35), 0 18px 40px rgba(0, 0, 0, 0.35);
+  background:
+    radial-gradient(300px 120px at 30% 20%, rgba(255, 255, 255, 0.05) 0%, transparent 70%),
+    radial-gradient(260px 100px at 75% 80%, rgba(255, 255, 255, 0.04) 0%, transparent 70%),
+    #24493d;
+}
+
+.g-digits .digits-target {
+  position: relative;
+  font-size: 3rem;
+  text-shadow: 0 0 1px #ffe27a, 1px 1px 0 rgba(255, 255, 255, 0.15);
+  animation: pop-in 0.45s cubic-bezier(0.2, 1.5, 0.4, 1);
+}
+
+.g-digits .digits-target::after {
+  content: "";
+  position: absolute;
+  left: -8px;
+  right: -8px;
+  bottom: 2px;
+  height: 4px;
+  border-radius: 2px;
+  background: #ffe27a;
+  opacity: 0.8;
+  rotate: -1.5deg;
+}
+
+.g-digits .digit {
+  background: transparent;
+  border: 2.5px dashed rgba(244, 241, 228, 0.75);
+  color: #f4f1e4;
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  text-shadow: 0 0 1px #f4f1e4;
+  animation: pop-in 0.3s cubic-bezier(0.2, 1.5, 0.4, 1);
+  transition: transform 0.12s ease, border-color 0.2s ease;
+}
+
+.g-digits .digit:hover {
+  transform: rotate(-3deg) scale(1.05);
+}
+
+.g-digits .digit.sel {
+  border-style: solid;
+  border-color: #ffe27a;
+  color: #ffe27a;
+  box-shadow: 0 0 0 4px rgba(255, 226, 122, 0.2);
+}
+
+.g-digits .digit.hit {
+  background: #ffe27a;
+  border-color: #ffe27a;
+  color: #2c2500;
+  text-shadow: none;
+  animation: hop 0.5s ease 2;
+}
+
+.g-digits .digits-ops .op {
+  border-style: dashed;
+  font-family: var(--font-display);
+}
+
+/* =====================================================================
+   Mini Sudoku — ink on paper with a red seal
+   ===================================================================== */
+
+.g-sudoku {
+  --ink: #26221c;
+  --ink-dim: #6e6455;
+  --lamp: #c8402f;
+  --lamp-rgb: 200, 64, 47;
+  --lamp-soft: rgba(200, 64, 47, 0.18);
+  --on-lamp: #fff6ea;
+  --ghost: rgba(38, 34, 28, 0.06);
+  --ghost-hover: rgba(38, 34, 28, 0.11);
+  --glass-edge: rgba(38, 34, 28, 0.28);
+  --field: rgba(255, 255, 255, 0.7);
+  --track: rgba(38, 34, 28, 0.12);
+  --soft-rgb: 38, 34, 28;
+  color-scheme: light;
+  background:
+    repeating-linear-gradient(0deg, transparent 0 3px, rgba(120, 100, 60, 0.035) 3px 4px),
+    radial-gradient(300px 220px at 100% 0%, rgba(200, 64, 47, 0.08) 0%, transparent 70%),
+    #f6eedd;
+}
+
+.g-sudoku .sudoku-grid {
+  position: relative;
+  border: 3px solid #26221c;
+  border-radius: 6px;
+  background: #fffaf0;
+  box-shadow: 6px 6px 0 rgba(38, 34, 28, 0.14);
+  overflow: visible;
+}
+
+.g-sudoku .sd-cell {
+  color: #c8402f;
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  border-color: rgba(38, 34, 28, 0.22);
+}
+
+.g-sudoku .sd-cell.given {
+  color: #26221c;
+}
+
+.g-sudoku .sd-cell.edge-r {
+  border-right: 2.5px solid #26221c;
+}
+
+.g-sudoku .sd-cell.edge-b {
+  border-bottom: 2.5px solid #26221c;
+}
+
+.g-sudoku .sd-cell.related {
+  background: rgba(200, 64, 47, 0.06);
+}
+
+.g-sudoku .sd-cell.sel {
+  background: rgba(200, 64, 47, 0.18);
+  box-shadow: inset 0 0 0 2px #c8402f;
+}
+
+.g-sudoku .sd-cell.clash {
+  color: #fff;
+  background: #c8402f;
+}
+
+.g-sudoku .sd-cell span {
+  display: inline-block;
+  animation: ink-in 0.3s ease;
+}
+
+@keyframes ink-in {
+  from {
+    opacity: 0;
+    transform: scale(1.8);
+    filter: blur(2px);
+  }
+}
+
+.seal {
+  position: absolute;
+  right: -22px;
+  bottom: -22px;
+  z-index: 2;
+  animation: stamp-in 0.5s ease 0.2s both;
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.25));
+}
+
+.g-sudoku .sudoku-grid.solved .sd-cell {
+  animation: hop 0.5s ease both;
+}
+
+.g-sudoku .sudoku-pad .btn {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  background: #fffaf0;
+  box-shadow: 0 3px 0 rgba(38, 34, 28, 0.2);
+}
+
+/* light skins: darker rival/notes text already comes from the variables */
+.g-scramble .rivals,
+.g-timeline .rivals,
+.g-sudoku .rivals {
+  border-top-color: rgba(0, 0, 0, 0.2);
+}
+
+@media (max-width: 700px) {
+  .cinema {
+    padding: 22px 34px 12px;
+  }
+  .cinema .curtain {
+    width: 30px;
+  }
+  .con-figure {
+    display: none;
+  }
+}

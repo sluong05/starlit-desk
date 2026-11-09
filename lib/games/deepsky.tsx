@@ -3,7 +3,9 @@
 import { useEffect } from "react";
 import { closeEnough, norm, sample, type BoardProps, type GameDef, type Rand } from "./core";
 import { DEEP_SKY } from "./data/content";
-import { AnswerBox, Flash, useFlash } from "@/components/games/kit";
+import { AnswerBox, Flash, useFlash, useRise } from "@/components/games/kit";
+import { Stopwatch, Voyage } from "@/components/games/art";
+import { sfx } from "./sfx";
 
 /*
  * Name something in the category before time runs out — the rarer your answer,
@@ -65,10 +67,17 @@ function Board({ puzzle, state, states, act, locked, players, elapsedMs }: Board
   }, [left, finished, started, i, locked, act]);
   void elapsedMs; // re-render each tick
 
+  useRise(total(state), () => sfx("launch"));
+  const secs = Math.ceil(left);
+  useEffect(() => {
+    if (!finished && started !== undefined && secs <= 5 && secs > 0 && !locked) sfx("tick");
+  }, [secs, finished, started, locked]);
+
   if (finished) {
     const others = players.filter((p) => !p.isMe);
     return (
       <div className="sky">
+        <Voyage frac={total(state) / 500} />
         <p className="game-note">
           You traveled <strong>{total(state) * 10} light-years</strong> ✦
         </p>
@@ -114,10 +123,13 @@ function Board({ puzzle, state, states, act, locked, players, elapsedMs }: Board
         <span>
           {i + 1} / {puzzle.prompts.length}
         </span>
-        <span className={`sky-clock ${left < 6 ? "low" : ""}`}>{Math.ceil(left)}s</span>
+        <Stopwatch frac={left / SECONDS} label={`${Math.ceil(left)}`} low={left < 6} />
         <span>{total(state) * 10} ly</span>
       </div>
-      <h3 className="sky-q">{prompt.q}</h3>
+      <Voyage frac={total(state) / 500} />
+      <h3 className="sky-q" key={`q${i}`}>
+        {prompt.q}
+      </h3>
       <p className="game-note">Rarer answers travel farther: {POINTS.map((p, k) => `${TIER_NAMES[k]} ${p * 10}`).join(" · ")}</p>
       <Flash msg={msg} />
       <AnswerBox
@@ -135,7 +147,7 @@ function Board({ puzzle, state, states, act, locked, players, elapsedMs }: Board
         }}
       />
       <div className="row" style={{ marginTop: "0.5rem" }}>
-        <button className="btn btn-ghost" disabled={locked} onClick={() => act({ type: "pass", i })}>
+        <button className="btn btn-ghost" disabled={locked} onClick={() => (sfx("whoosh"), act({ type: "pass", i }))}>
           Pass
         </button>
       </div>

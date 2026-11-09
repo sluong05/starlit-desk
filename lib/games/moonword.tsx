@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { pick, type BoardProps, type GameDef } from "./core";
-import { Flash, Rivals, Who, typingInField, useFlash } from "@/components/games/kit";
+import { Flash, Rivals, Who, typingInField, useFlash, useRise } from "@/components/games/kit";
+import { MoonPhase } from "@/components/games/art";
+import { sfx } from "./sfx";
 
 /* Guess the hidden five-letter word in six tries. */
 
@@ -38,9 +40,10 @@ function Board({ puzzle, state, states, act, locked, players, mode }: BoardProps
   const finished = won(state, puzzle) || state.guesses.length >= ROWS;
 
   const submit = () => {
-    if (typed.length < 5) return flash("Not enough letters");
-    if (!puzzle.valid.has(typed)) return flash("Not in the word list");
-    if (state.guesses.some((g) => g.word === typed)) return flash("Already guessed");
+    const nope = (m: string) => (sfx("bad"), flash(m));
+    if (typed.length < 5) return nope("Not enough letters");
+    if (!puzzle.valid.has(typed)) return nope("Not in the word list");
+    if (state.guesses.some((g) => g.word === typed)) return nope("Already guessed");
     act({ type: "guess", word: typed });
     setTyped("");
   };
@@ -48,9 +51,11 @@ function Board({ puzzle, state, states, act, locked, players, mode }: BoardProps
   const press = (k: string) => {
     if (locked || finished) return;
     if (k === "enter") submit();
-    else if (k === "back") setTyped((t) => t.slice(0, -1));
-    else if (/^[a-z]$/.test(k)) setTyped((t) => (t.length < 5 ? t + k : t));
+    else if (k === "back") (sfx("back"), setTyped((t) => t.slice(0, -1)));
+    else if (/^[a-z]$/.test(k)) (sfx("type"), setTyped((t) => (t.length < 5 ? t + k : t)));
   };
+
+  useRise(state.guesses.length, () => sfx("flip"));
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -75,18 +80,24 @@ function Board({ puzzle, state, states, act, locked, players, mode }: BoardProps
 
   const rows = Array.from({ length: ROWS }, (_, r) => {
     const g = state.guesses[r];
-    if (g) return { letters: g.word.split(""), m: marks(g.word, puzzle.answer), by: g.by };
-    if (r === state.guesses.length && !finished) return { letters: typed.padEnd(5).split(""), m: null, by: "" };
-    return { letters: Array(5).fill(" "), m: null, by: "" };
+    if (g) return { letters: g.word.split(""), m: marks(g.word, puzzle.answer), by: g.by, win: g.word === puzzle.answer };
+    if (r === state.guesses.length && !finished) return { letters: typed.padEnd(5).split(""), m: null, by: "", win: false };
+    return { letters: Array(5).fill(" "), m: null, by: "", win: false };
   });
 
   return (
     <div className="mw">
+      <div className="mw-moon">
+        <MoonPhase p={won(state, puzzle) ? 1 : state.guesses.length / ROWS} glow={won(state, puzzle)} />
+        <p>
+          <span className="key-hit" /> right spot <span className="key-near" /> wrong spot
+        </p>
+      </div>
       <div className="mw-grid">
         {rows.map((row, r) => (
-          <div className="mw-row" key={r}>
+          <div className={`mw-row ${row.win ? "won" : ""}`} key={r}>
             {row.letters.map((l, i) => (
-              <div key={i} className={`mw-cell ${row.m ? `m-${row.m[i]}` : l.trim() ? "filled" : ""}`} style={{ animationDelay: `${i * 90}ms` }}>
+              <div key={i} className={`mw-cell ${row.m ? `m-${row.m[i]}` : l.trim() ? "filled" : ""}`} style={{ animationDelay: `${i * 90}ms, ${500 + i * 80}ms` }}>
                 {l.trim()}
               </div>
             ))}

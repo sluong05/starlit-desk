@@ -3,7 +3,9 @@
 import { useState } from "react";
 import { pick, shuffle, type BoardProps, type GameDef, type Rand } from "./core";
 import { CONSTELLATION_PUZZLES, type ConGroup } from "./data/content";
-import { Flash, Rivals, Who, useFlash } from "@/components/games/kit";
+import { Flash, Rivals, Who, useFlash, useRise } from "@/components/games/kit";
+import { ConstellationFigure } from "@/components/games/art";
+import { sfx } from "./sfx";
 
 /* Sixteen stars, four hidden constellations. Find the groups of four. */
 
@@ -31,8 +33,12 @@ function Board({ puzzle, state, states, act, locked, players, mode }: BoardProps
 
   const toggle = (w: string) => {
     if (locked || over) return;
+    sfx("tap");
     setSel((s) => (s.includes(w) ? s.filter((x) => x !== w) : s.length < 4 ? [...s, w] : s));
   };
+
+  useRise(state.solved.length, () => sfx("great"));
+  useRise(state.mistakes, () => sfx("bad"));
 
   const submit = () => {
     if (sel.length !== 4) return;
@@ -53,6 +59,7 @@ function Board({ puzzle, state, states, act, locked, players, mode }: BoardProps
       <div className="cons-solved">
         {[...state.solved.map((x) => ({ g: x.g, by: x.by })), ...shown.map((g) => ({ g, by: "" }))].map(({ g, by }) => (
           <div key={g} className={`cons-group lvl-${puzzle.groups[g].level}`}>
+            <ConstellationFigure level={puzzle.groups[g].level} />
             <strong>{puzzle.groups[g].name}</strong>
             <span>{puzzle.groups[g].words.join(", ")}</span>
             {mode === "coop" && by && <Who id={by} players={players} />}
@@ -70,7 +77,7 @@ function Board({ puzzle, state, states, act, locked, players, mode }: BoardProps
       )}
       <Flash msg={msg} />
       <div className="cons-foot">
-        <span className="cons-lives" aria-label={`${MAX_MISTAKES - state.mistakes} mistakes left`}>
+        <span key={state.mistakes} className={`cons-lives ${state.mistakes ? "hit" : ""}`} aria-label={`${MAX_MISTAKES - state.mistakes} mistakes left`}>
           Mistakes left:{" "}
           {Array.from({ length: MAX_MISTAKES }, (_, i) => (
             <span key={i} className={i < MAX_MISTAKES - state.mistakes ? "life" : "life gone"}>
@@ -80,7 +87,7 @@ function Board({ puzzle, state, states, act, locked, players, mode }: BoardProps
         </span>
         {!over && (
           <div className="row">
-            <button className="btn btn-ghost" onClick={() => setOrder((o) => shuffle(o, Math.random))} disabled={locked}>
+            <button className="btn btn-ghost" onClick={() => (sfx("shuffle"), setOrder((o) => shuffle(o, Math.random)))} disabled={locked}>
               Shuffle
             </button>
             <button className="btn btn-ghost" onClick={() => setSel([])} disabled={locked || !sel.length}>

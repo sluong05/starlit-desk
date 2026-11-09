@@ -1,7 +1,8 @@
 "use client";
 
 import { pick, type BoardProps, type GameDef, type Rand } from "./core";
-import { AnswerBox, Flash, Rivals, Who, useFlash } from "@/components/games/kit";
+import { AnswerBox, Flash, Rivals, Who, useFlash, useRise } from "@/components/games/kit";
+import { sfx } from "./sfx";
 
 /* Turn one word into another, changing a single letter each step. */
 
@@ -68,6 +69,7 @@ function Board({ puzzle, state, states, act, locked, players, mode }: BoardProps
   const [msg, flash] = useFlash();
   const last = state.chain[state.chain.length - 1];
   const done = finished(state, puzzle);
+  useRise(state.chain.length, () => sfx("knock"));
 
   return (
     <div className="ladder">
@@ -116,7 +118,7 @@ function Board({ puzzle, state, states, act, locked, players, mode }: BoardProps
               }}
             />
           </div>
-          <button className="btn btn-ghost" style={{ flex: "0 0 auto" }} disabled={locked || state.chain.length < 2} onClick={() => act({ type: "undo" })}>
+          <button className="btn btn-ghost" style={{ flex: "0 0 auto" }} disabled={locked || state.chain.length < 2} onClick={() => (sfx("back"), act({ type: "undo" }))}>
             Undo
           </button>
         </div>

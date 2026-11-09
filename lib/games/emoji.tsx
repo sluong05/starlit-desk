@@ -2,7 +2,8 @@
 
 import { closeEnough, sample, type BoardProps, type GameDef, type Rand } from "./core";
 import { EMOJI_MOVIES, type EmojiMovie } from "./data/content";
-import { AnswerBox, Flash, Rivals, Who, useFlash } from "@/components/games/kit";
+import { AnswerBox, Flash, Rivals, Who, useFlash, useRise } from "@/components/games/kit";
+import { sfx } from "./sfx";
 
 /* Name the movie from its emoji. Hints cost a star. */
 
@@ -25,6 +26,8 @@ const stars = (s: S) => s.results.reduce((n, r) => n + (r.ok ? 3 - r.hints : 0),
 function Board({ puzzle, state, states, act, locked, players, mode }: BoardProps<P, S, A>) {
   const [msg, flash] = useFlash();
   const done = state.i >= puzzle.movies.length;
+  useRise(state.results.length, () => sfx(state.results[state.results.length - 1]?.ok ? "clap" : "whoosh"));
+  useRise(state.hints, () => sfx("pop"));
 
   return (
     <div className="emoji">
@@ -53,8 +56,19 @@ function Board({ puzzle, state, states, act, locked, players, mode }: BoardProps
         </>
       ) : (
         <>
-          <div className="emoji-clue" aria-label="Emoji clue">
-            {puzzle.movies[state.i].emoji}
+          <div className="cinema">
+            <div className="marquee" aria-hidden="true">
+              {Array.from({ length: 13 }, (_, k) => (
+                <i key={k} style={{ animationDelay: `${(k % 3) * 0.3}s` }} />
+              ))}
+            </div>
+            <div className="curtain curtain-l" aria-hidden="true" />
+            <div className="curtain curtain-r" aria-hidden="true" />
+            <div className="screen">
+              <div className="emoji-clue" key={state.i} aria-label="Emoji clue">
+                {puzzle.movies[state.i].emoji}
+              </div>
+            </div>
           </div>
           <div className="emoji-hints">
             {state.hints >= 1 && <span>Released {puzzle.movies[state.i].year}</span>}

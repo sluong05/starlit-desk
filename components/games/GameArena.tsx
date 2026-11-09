@@ -1,9 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { GAMES, getGame } from "@/lib/games";
 import { fmtTime, makeRand, type GameDef, type Mode, type Player, type Score } from "@/lib/games/core";
 import type { LoggedAct } from "@/lib/games/useGameLog";
+import { setMuted, sfx } from "@/lib/games/sfx";
+import { useSfxMuted } from "@/components/games/kit";
+import { GameCover, SKIN_COLORS } from "@/components/games/art";
+import { Confetti } from "@/components/games/fx";
 
 export type Session = { sid: string; gameId: string; mode: Mode; seed: number; startedAt: number };
 
@@ -38,6 +42,7 @@ export default function GameArena({
 }) {
   const [mode, setMode] = useState<Mode>("coop");
   const game = getGame(session?.gameId);
+  const muted = useSfxMuted();
 
   const start = (g: GameDef, again = false) => {
     const m = again && session ? session.mode : g.modes.includes(mode) ? mode : g.modes[0];
@@ -68,6 +73,9 @@ export default function GameArena({
               All games
             </button>
           )}
+          <button className="btn btn-ghost btn-sm" onClick={() => setMuted(!muted)} aria-pressed={muted} aria-label={muted ? "Turn game sounds on" : "Turn game sounds off"} title={muted ? "Game sounds are off" : "Game sounds are on"}>
+            {muted ? "🔇" : "🔊"}
+          </button>
           <button className="btn btn-ghost btn-sm" onClick={onClose} aria-label="Close games">
             ✕
           </button>
@@ -129,7 +137,9 @@ function Menu({ mode, setMode, onPick, players }: { mode: Mode; setMode: (m: Mod
           const only = !g.modes.includes(mode);
           return (
             <button key={g.id} className="game-card" onClick={() => onPick(g)}>
-              <span className="gc-icon">{g.icon}</span>
+              <span className="gc-cover">
+                <GameCover id={g.id} />
+              </span>
               <span className="gc-name">{g.name}</span>
               <span className="gc-tag">{g.tagline}</span>
               <span className="gc-meta">
@@ -186,6 +196,11 @@ function Play({
     return () => clearInterval(id);
   }, []);
 
+  // A little fanfare when a game opens.
+  useEffect(() => {
+    sfx("start");
+  }, []);
+
   const puzzle = useMemo(() => (data === undefined ? null : game.puzzle(makeRand(session.seed), data)), [game, session.seed, data]);
 
   // Everyone who's here, plus anyone who played moves and then left.
@@ -225,7 +240,7 @@ function Play({
 
   const Board = game.Board;
   return (
-    <div className="play">
+    <div className={`play skin g-${game.id}`}>
       {showResults && (
         <Results
           game={game}
@@ -278,15 +293,18 @@ function Results({
 }) {
   const pids = players.map((p) => p.id);
   let body: React.ReactNode;
+  let celebrate = false;
   if (mode === "coop") {
     const team: Score = game.teamScore
       ? game.teamScore(pids.map((id) => states[id]), puzzle, pids)
       : game.score(states[pids.find((id) => players.find((p) => p.id === id)?.isMe) ?? pids[0]], puzzle, pids[0]);
+    celebrate = team.value > 0;
     body = <p className="results-line">🤝 Together: <strong>{team.text}</strong></p>;
   } else {
     const scored = players.map((p) => ({ p, s: game.score(states[p.id], puzzle, p.id) })).sort((a, b) => b.s.value - a.s.value);
     const top = scored[0]?.s.value;
     const tie = scored.filter((x) => x.s.value === top).length > 1;
+    celebrate = top > 0 && (scored.length < 2 || tie || scored[0].p.isMe);
     body = (
       <>
         <p className="results-line">
@@ -312,8 +330,15 @@ function Results({
     );
   }
 
+  // Play the ending once, when the results first appear.
+  const celebrateRef = useRef(celebrate);
+  useEffect(() => {
+    sfx(celebrateRef.current ? "win" : "lose");
+  }, []);
+
   return (
-    <div className={`results ${breakOver ? "break-over" : ""}`} role="status">
+    <div className={`results ${breakOver ? "break-over" : ""} ${celebrate ? "celebrate" : ""}`} role="status">
+      {celebrate && <Confetti colors={SKIN_COLORS[game.id] ?? ["#ffd28a", "#fff"]} />}
       {breakOver && <h3>☾ Break&apos;s over — back to studying!</h3>}
       {body}
       <div className="row">

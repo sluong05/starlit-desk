@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { shuffle, type BoardProps, type GameDef, type Rand } from "./core";
 import { Rivals, typingInField } from "@/components/games/kit";
+import { Seal } from "@/components/games/art";
+import { sfx } from "./sfx";
 
 /* A 6×6 sudoku: every row, column and 2×3 box holds 1–6 once. */
 
@@ -58,6 +60,7 @@ function Board({ puzzle, state, states, act, locked, players, mode }: BoardProps
 
   const put = (v: number) => {
     if (sel === null || locked || done || puzzle.givens[sel]) return;
+    sfx(v ? "stamp" : "back");
     act({ type: "set", i: sel, v });
   };
 
@@ -80,7 +83,8 @@ function Board({ puzzle, state, states, act, locked, players, mode }: BoardProps
 
   return (
     <div className="sudoku">
-      <div className="sudoku-grid" role="grid">
+      <div className={`sudoku-grid ${done ? "solved" : ""}`} role="grid">
+        {done && <Seal />}
         {puzzle.solution.map((_, i) => {
           const v = value(state, puzzle, i);
           const clash = !!v && PEERS[i].some((j) => value(state, puzzle, j) === v);
@@ -100,7 +104,7 @@ function Board({ puzzle, state, states, act, locked, players, mode }: BoardProps
               onClick={() => setSel(i)}
               disabled={locked}
             >
-              {v || ""}
+              {v ? <span key={v}>{v}</span> : ""}
             </button>
           );
         })}

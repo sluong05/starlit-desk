@@ -71,6 +71,8 @@ lib/
 
 **Games.** Each game in `lib/games/` is a pure state machine: `puzzle(seed)` builds the puzzle (both players generate the same one locally from a shared seed), and `reduce(state, action)` applies a move. Every move is broadcast on the `game-act` data topic into a shared, time-ordered log (`lib/games/useGameLog.ts`) that each browser replays, so both screens always agree without a server. In co-op, everyone's moves build one shared state; in race, each player's moves build their own. To add a game, write a `GameDef` and add it to `lib/games/index.ts`. Word lists come from SCOWL (see `lib/games/data/WORDLIST-COPYRIGHT.txt`) and are rebuilt with `node scripts/build-word-data.mjs`.
 
+**Game art and sound.** Each game has its own skin: a palette and themed play area in `app/games-skins.css` (one `.g-<id>` block per game), cover and in-game illustrations as hand-drawn SVG in `components/games/art.tsx`, and synthesized sound effects in `lib/games/sfx.ts` (no audio files; the 🔊 button in the games header mutes them).
+
 **Themes.** The palette for each theme is a block of CSS variables in `app/globals.css` (`[data-theme="…"]`); the moving scene is a function in `lib/scenes.ts`. To add a theme, add an entry to `lib/themes.ts`, a palette block, and a scene.
 
 **Sounds.** Each sound is rendered once into a seamless stereo loop (20–36 s) in a Web Worker, then looped with a random start point. To swap in recorded audio later (e.g. ElevenLabs), replace `loadSound` in `lib/sound/engine.ts` with a `fetch` + `decodeAudioData` of your file; the rest of the mixer stays the same.

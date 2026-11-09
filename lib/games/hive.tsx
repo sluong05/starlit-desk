@@ -2,7 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { pick, shuffle, type BoardProps, type GameDef, type Rand } from "./core";
-import { Flash, Rivals, Who, typingInField, useFlash } from "@/components/games/kit";
+import { Flash, Rivals, Who, typingInField, useFlash, useRise } from "@/components/games/kit";
+import { Bee, HoneyJar } from "@/components/games/art";
+import { sfx } from "./sfx";
 
 /* Make words from seven letters; every word must use the center letter. */
 
@@ -57,11 +59,12 @@ function Board({ puzzle, state, states, act, locked, players, mode, me }: BoardP
   const submit = () => {
     const w = typed;
     setTyped("");
-    if (w.length < 4) return flash("Too short");
-    if (!w.includes(puzzle.center)) return flash(`Needs ${puzzle.center.toUpperCase()}`);
-    if ([...w].some((c) => !puzzle.letters.includes(c))) return flash("Bad letters");
-    if (state.found.some((f) => f.w === w)) return flash("Already found");
-    if (!puzzle.answers.has(w) && !puzzle.bonus.has(w)) return flash("Not in the word list");
+    const nope = (m: string) => (sfx("bad"), flash(m));
+    if (w.length < 4) return nope("Too short");
+    if (!w.includes(puzzle.center)) return nope(`Needs ${puzzle.center.toUpperCase()}`);
+    if ([...w].some((c) => !puzzle.letters.includes(c))) return nope("Bad letters");
+    if (state.found.some((f) => f.w === w)) return nope("Already found");
+    if (!puzzle.answers.has(w) && !puzzle.bonus.has(w)) return nope("Not in the word list");
     const pts = points(w, puzzle);
     flash(pts > w.length ? `✦ Pangram! +${pts}` : puzzle.bonus.has(w) ? `Bonus word! +${pts}` : `+${pts}`);
     act({ type: "word", w });
@@ -70,9 +73,14 @@ function Board({ puzzle, state, states, act, locked, players, mode, me }: BoardP
   const press = (k: string) => {
     if (locked || iFinished) return;
     if (k === "enter") submit();
-    else if (k === "back") setTyped((t) => t.slice(0, -1));
-    else if (puzzle.letters.includes(k)) setTyped((t) => (t.length < 19 ? t + k : t));
+    else if (k === "back") (sfx("back"), setTyped((t) => t.slice(0, -1)));
+    else if (puzzle.letters.includes(k)) (sfx("type"), setTyped((t) => (t.length < 19 ? t + k : t)));
   };
+
+  useRise(state.found.length, () => {
+    const last = state.found[state.found.length - 1];
+    sfx(last && points(last.w, puzzle) > last.w.length ? "great" : "buzz");
+  });
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -94,7 +102,10 @@ function Board({ puzzle, state, states, act, locked, players, mode, me }: BoardP
   return (
     <div className="hive">
       <div className="hive-status">
-        <strong>{rank(score, puzzle)}</strong>
+        <HoneyJar pct={score / (puzzle.max * 0.75)} />
+        <strong key={rank(score, puzzle)} className="hive-rank">
+          {rank(score, puzzle)}
+        </strong>
         <div className="timer-progress" style={{ flex: 1, margin: 0 }}>
           <div style={{ width: `${pct}%` }} />
         </div>
@@ -115,6 +126,11 @@ function Board({ puzzle, state, states, act, locked, players, mode, me }: BoardP
       <Flash msg={msg} />
 
       <div className="hive-comb">
+        {state.found.length > 0 && (
+          <span key={state.found.length} className="bee-fly">
+            <Bee />
+          </span>
+        )}
         {[puzzle.center, ...outer].map((l, i) => (
           <button key={l} type="button" className={`hex hex-${i} ${i === 0 ? "hex-center" : ""}`} onClick={() => press(l)} disabled={locked}>
             {l}
@@ -126,7 +142,7 @@ function Board({ puzzle, state, states, act, locked, players, mode, me }: BoardP
         <button className="btn btn-ghost" onClick={() => press("back")} disabled={locked}>
           Delete
         </button>
-        <button className="btn btn-ghost" onClick={() => setOuter((o) => shuffle(o, Math.random))} disabled={locked}>
+        <button className="btn btn-ghost" onClick={() => (sfx("shuffle"), setOuter((o) => shuffle(o, Math.random)))} disabled={locked}>
           ⟳ Shuffle
         </button>
         <button className="btn btn-lamp" onClick={() => press("enter")} disabled={locked}>

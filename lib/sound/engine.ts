@@ -187,3 +187,9 @@ export function chime() {
     /* audio blocked; the on-screen change is enough */
   }
 }
+
+/** Output nodes for short game sound effects (shares the ambience's reverb and compressor). */
+export function sfxBus() {
+  const ac = audio();
+  return { ac, master, reverbIn };
+}

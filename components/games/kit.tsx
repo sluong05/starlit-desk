@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import type { Player } from "@/lib/games/core";
+import { isMuted, sfx, subscribeMuted } from "@/lib/games/sfx";
 
 /** A text box + button that hands the trimmed text to `onSubmit` and clears itself. */
 export function AnswerBox({
@@ -34,6 +35,7 @@ export function AnswerBox({
         if (!t || disabled) return;
         const ok = onSubmit(t);
         if (ok === false) {
+          sfx("bad");
           setShake(true);
           setTimeout(() => setShake(false), 400);
         } else setText("");
@@ -109,4 +111,19 @@ export function Rivals({ players, render }: { players: Player[]; render: (p: Pla
 export function typingInField(e: KeyboardEvent) {
   const t = e.target as HTMLElement | null;
   return !!t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable);
+}
+
+/** Runs `onRise` whenever a number goes up (a new guess, a solved row…), whoever caused it. */
+export function useRise(value: number, onRise: (delta: number) => void) {
+  const prev = useRef(value);
+  const cb = useRef(onRise);
+  cb.current = onRise;
+  useEffect(() => {
+    if (value > prev.current) cb.current(value - prev.current);
+    prev.current = value;
+  }, [value]);
+}
+
+export function useSfxMuted() {
+  return useSyncExternalStore(subscribeMuted, isMuted, () => false);
 }
